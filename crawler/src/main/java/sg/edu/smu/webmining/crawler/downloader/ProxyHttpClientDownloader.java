@@ -2,7 +2,10 @@ package sg.edu.smu.webmining.crawler.downloader;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.proxy.ProxyProvider;
@@ -27,18 +30,36 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
     this.proxyProvider = proxyProvider;
   }
 
+  // Common UserAgent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36
+  // Source: https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
+
   @Override
   protected HttpUriRequest getHttpUriRequest(Request request, Site site, Map<String, String> headers) {
-    final HttpUriRequest uriRequest = super.getHttpUriRequest(request, site, headers);
+    RequestBuilder requestBuilder = selectRequestMethod(request).setUri(request.getUrl());
 
-    // Common UserAgent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36
-    // Source: https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
+    if (headers != null) {
+      for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
+        requestBuilder.addHeader(headerEntry.getKey(), headerEntry.getValue());
+      }
+    }
 
-    uriRequest.setHeader("User-Agent", RandomStringUtils.random(32, true, true)); // use random user agent
-    request.putExtra(Request.PROXY, proxyProvider.next()); // use random proxy
+    final HttpHost proxy = proxyProvider.next();
 
+    RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
+        .setConnectionRequestTimeout(site.getTimeOut())
+        .setSocketTimeout(site.getTimeOut())
+        .setConnectTimeout(site.getTimeOut())
+        .setConnectionRequestTimeout(site.getTimeOut())
+        .setCookieSpec(CookieSpecs.BEST_MATCH)
+        .setProxy(proxy);
+
+    request.putExtra(Request.PROXY, proxy);
+
+    final HttpUriRequest uriRequest = requestBuilder.setConfig(requestConfigBuilder.build()).build();
+    uriRequest.setHeader("User-Agent", RandomStringUtils.random(32, true, true));
     return uriRequest;
   }
+
 
   @Override
   public Page download(Request request, Task task) {
@@ -57,7 +78,6 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
   @Override
   protected Page addToCycleRetry(Request request, Site site) {
     proxyProvider.remove((HttpHost) request.getExtra(Request.PROXY));
-    request.putExtra(Request.PROXY, proxyProvider.next());
     return super.addToCycleRetry(request, site);
   }
 

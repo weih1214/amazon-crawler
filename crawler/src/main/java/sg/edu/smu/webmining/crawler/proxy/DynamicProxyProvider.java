@@ -59,6 +59,11 @@ public class DynamicProxyProvider implements ProxyProvider {
 
   @Override
   public synchronized HttpHost next() {
+    if (proxies.isEmpty()) {
+      logger.error("proxy pool is empty, throw exception, terminate thread");
+      throw new RuntimeException("Proxy pool is empty");
+    }
+
     return proxies.get(random.nextInt(proxies.size()));
   }
 

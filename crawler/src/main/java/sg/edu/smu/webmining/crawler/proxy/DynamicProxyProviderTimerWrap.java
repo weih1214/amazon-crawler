@@ -14,7 +14,7 @@ public class DynamicProxyProviderTimerWrap implements ProxyProvider {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  private static final int DEFAULT_PERIOD = 30000; // 30sec
+  private static final int DEFAULT_PERIOD = 60000; // 60sec
 
   private final DynamicProxyProvider provider;
   private final long period;
