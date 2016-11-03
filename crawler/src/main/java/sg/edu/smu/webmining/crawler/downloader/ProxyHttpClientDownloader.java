@@ -66,8 +66,8 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
     Page page = super.download(request, task);
     if (page == null) {
       final Object statusCode = request.getExtra(Request.STATUS_CODE);
-      if (statusCode != null && (Integer) statusCode == 400) { // HTTP Error: Bad request
-        logger.debug("bad request, request rescheduled");
+      if (statusCode != null && (Integer) statusCode != 200) {
+        logger.debug("status code is not OK, request rescheduled");
         return addToCycleRetry(request, task.getSite());
       }
     }
