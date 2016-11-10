@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.DatabasePipeline;
-import sg.edu.smu.webmining.crawler.pipeline.Page_checker;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -17,7 +16,6 @@ import sg.edu.smu.webmining.crawler.robotstxt.RobotstxtParser;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
-import us.codecraft.webmagic.pipeline.ConsolePipeline;
 import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.File;
