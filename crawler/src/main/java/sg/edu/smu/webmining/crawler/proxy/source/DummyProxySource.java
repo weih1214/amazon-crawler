@@ -16,4 +16,5 @@ public class DummyProxySource implements ProxyListSource {
   public Collection<HttpHost> fetch() throws IOException {
     return new ArrayList<>(Collections.singletonList(new HttpHost("8.8.8.8", 80)));
   }
+
 }

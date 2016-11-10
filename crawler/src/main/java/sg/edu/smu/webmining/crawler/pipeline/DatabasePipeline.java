@@ -55,8 +55,6 @@ public class DatabasePipeline implements Pipeline {
     } catch (ClassNotFoundException e) {
       System.out.println("Sorry,can`t find the Driver!");
       e.printStackTrace();
-    } catch (SQLException e) {
-      e.printStackTrace();
     } catch (Exception e) {
       e.printStackTrace();
     }

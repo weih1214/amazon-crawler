@@ -19,10 +19,7 @@ public class HtmlPipeline implements Pipeline {
       printWriter.print((String)resultItems.get("html"));
       printWriter.flush();
       printWriter.close();
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (UnsupportedEncodingException e) {
+    } catch (FileNotFoundException | UnsupportedEncodingException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
