@@ -12,7 +12,7 @@ public class DatabasePipeline implements Pipeline {
 
     // Convert hash map(links) into a String list
     // System.out.println(resultItems.get("product_id"));
-    List<String> product_list = resultItems.get("product_id");
+    List<String> product_list = resultItems.get("product_ids");
     List<String> urls_list = resultItems.get("urls");
 
     // Set driver name and login information

@@ -15,7 +15,7 @@ public class HtmlPipeline implements Pipeline {
 
     try {
       String filename = resultItems.get("Filename");
-      PrintWriter printWriter = new PrintWriter(new File("E:/Htmltext/" + filename + ".txt"), "UTF-8");
+      PrintWriter printWriter = new PrintWriter(new File("E:/Htmltext/" + filename + ".html"), "UTF-8");
       printWriter.print((String)resultItems.get("html"));
       printWriter.flush();
       printWriter.close();
