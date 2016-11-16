@@ -1,29 +1,39 @@
 package sg.edu.smu.webmining.crawler.pipeline;
 
+import org.apache.commons.io.FileUtils;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.pipeline.Pipeline;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 
 public class HtmlPipeline implements Pipeline {
 
-  public void process(ResultItems resultItems, Task task) {
+  private final File dir;
 
+  public HtmlPipeline(String dirPath) {
+    this(new File(dirPath));
+  }
+
+  public HtmlPipeline(File dir) {
+    this.dir = dir;
+    if (!dir.exists()) {
+      if (!dir.mkdirs()) {
+        throw new RuntimeException("Cannot create dir: " + dir);
+      }
+    }
+  }
+
+  public void process(ResultItems resultItems, Task task) {
     try {
-      String filename = resultItems.get("Filename");
-      PrintWriter printWriter = new PrintWriter(new File("E:/Htmltext/" + filename + ".html"), "UTF-8");
-      printWriter.print((String)resultItems.get("html"));
-      printWriter.flush();
-      printWriter.close();
-    } catch (FileNotFoundException | UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
+      final String filename = resultItems.get("filename");
+      final String html = resultItems.get("raw_html");
+      FileUtils.writeStringToFile(new File(dir, filename + ".html"), html, "UTF-8");
+    } catch (IOException e) {
       e.printStackTrace();
     }
-
   }
+
 }
 

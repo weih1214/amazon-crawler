@@ -33,7 +33,7 @@ public class HostDirectives {
   }
 
 
-  public boolean Isallowed(String path) {
+  public boolean isAllowed(String path) {
     return !disallows.containsPrefixOf(path) || allows.containsPrefixOf(path);
   }
 

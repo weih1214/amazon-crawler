@@ -26,7 +26,7 @@ import java.util.StringTokenizer;
 /**
  * @author Yasser Ganjisaffar
  */
-public class RobotstxtParser {
+public class RobotsTxtParser {
 
   private static final String PATTERNS_USERAGENT1 = "^User-agent: \\*";
   private static final String PATTERNS_USERAGENT2 = "User-agent:.*";
@@ -100,7 +100,7 @@ public class RobotstxtParser {
     // System.out.println(content);
 
     HostDirectives Amazon = null;
-    // RobotstxtParser temp = null;
+    // RobotsTxtParser temp = null;
     Amazon = parse(content);
     System.out.println(Amazon.disallows.size());
     System.out.println(Amazon.allows.size());

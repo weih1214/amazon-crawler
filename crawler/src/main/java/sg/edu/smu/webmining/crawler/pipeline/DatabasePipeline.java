@@ -7,9 +7,10 @@ import us.codecraft.webmagic.pipeline.Pipeline;
 import java.sql.*;
 import java.util.List;
 
+@Deprecated
 public class DatabasePipeline implements Pipeline {
-  public void process(ResultItems resultItems, Task task) {
 
+  public void process(ResultItems resultItems, Task task) {
     // Convert hash map(links) into a String list
     // System.out.println(resultItems.get("product_id"));
     List<String> product_list = resultItems.get("product_ids");

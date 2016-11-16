@@ -1,18 +1,19 @@
 package sg.edu.smu.webmining.crawler.processor;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.pipeline.DatabasePipeline;
+import sg.edu.smu.webmining.crawler.masterlist.DummyMasterListManager;
+import sg.edu.smu.webmining.crawler.masterlist.MySqlMasterListManager;
+import sg.edu.smu.webmining.crawler.pipeline.MasterListDatabasePipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.robotstxt.HostDirectives;
-import sg.edu.smu.webmining.crawler.robotstxt.RobotstxtParser;
+import sg.edu.smu.webmining.crawler.robotstxt.RobotsTxtParser;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -21,8 +22,6 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -50,7 +49,6 @@ public class MasterListPageProcessor implements PageProcessor {
       .setCharset("UTF-8");
 
   private boolean robotsIsUpdated = false;
-  private int total_items = 0;// Check whether MAX & MIN have been set
   private static HostDirectives AmazonRobots = null;
 
   private boolean isSearchStarted = false;
@@ -62,22 +60,6 @@ public class MasterListPageProcessor implements PageProcessor {
 
   private int maxNumItems = 9600;
 
-	/*
-   * Method check_and_set is for check whether this page contains max or min
-	 * and call setman() or setmin() to do the setting.
-	 * 
-	 * 
-	 * public void extractPriceRange(Page page) { total_items =
-	 * Integer.parseInt(page.getHtml() .xpath("/ [@class='a-size-base
-	 * a-spacing-small a-spacing-top-small a-text-normal']/text()" )
-	 * .regex("\\d+,\\d+").toString().replaceAll("[,]", ""));
-	 * 
-	 * 
-	 * if (page.check_max()) { setmax(page); maxPriceIsSet = true; } else if
-	 * (page.check_min()) { setmin(page); minPriceIsSet = true; }
-	 * 
-	 * }
-	 */
 
   /*
    * This method is to check whether the page has items lee than 9600. If yes,
@@ -177,26 +159,9 @@ public class MasterListPageProcessor implements PageProcessor {
     throw new RuntimeException("Cannot extract the page price range");
   }
 
-  public void WriteFile(Page page) {
-    try {
-      String filename = RandomStringUtils.random(8, true, true);
-      PrintWriter printWriter = new PrintWriter(new File("D:/" + filename + ".html"), "UTF-8");
-      printWriter.print(page.getHtml().toString());
-      printWriter.flush();
-      printWriter.close();
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
   @Override
   public void process(Page page) {
     logger.info("processing page {}", page.getUrl().toString());
-    WriteFile(page);
     if (!isSearchStarted) {
 
       // store seedpage & addtarget(descending & ascending)
@@ -238,8 +203,7 @@ public class MasterListPageProcessor implements PageProcessor {
       } else {
         page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal")
             .links().regex("/dp/(.*?)/").all());
-        page.putField("urls",
-            page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
+        page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
 
         final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
         if (nextPageUrl != null) {
@@ -272,7 +236,7 @@ public class MasterListPageProcessor implements PageProcessor {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    AmazonRobots = RobotstxtParser.parse(content);
+    AmazonRobots = RobotsTxtParser.parse(content);
     System.out.println(AmazonRobots.disallows.size());
     System.out.println(AmazonRobots.allows.size());
     System.out.println(AmazonRobots.disallows.toString());
@@ -280,7 +244,7 @@ public class MasterListPageProcessor implements PageProcessor {
     temp = temp.replaceFirst("https://www.amazon.com", "");
     System.out.println(temp);
     System.out.println(AmazonRobots.disallows.containsPrefixOf(temp));
-    System.out.println(AmazonRobots.Isallowed(temp));
+    System.out.println(AmazonRobots.isAllowed(temp));
 
     robotsIsUpdated = true;
   }
@@ -300,12 +264,16 @@ public class MasterListPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      Spider spider = Spider.create(new MasterListPageProcessor())
-          .setDownloader(new ProxyHttpClientDownloader(provider)).addPipeline(new DatabasePipeline())
-          .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
-          .thread(5);
+      try (final MySqlMasterListManager manager = new MySqlMasterListManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607")) {
 
-      spider.run();
+        Spider spider = Spider.create(new MasterListPageProcessor())
+            .setDownloader(new ProxyHttpClientDownloader(provider)).addPipeline(new MasterListDatabasePipeline(manager))
+            .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
+            .thread(5);
+
+        spider.run();
+
+      }
 
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
