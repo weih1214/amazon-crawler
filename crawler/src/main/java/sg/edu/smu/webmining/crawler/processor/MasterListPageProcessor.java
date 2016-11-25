@@ -5,7 +5,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.masterlist.DummyMasterListManager;
 import sg.edu.smu.webmining.crawler.masterlist.MySqlMasterListManager;
 import sg.edu.smu.webmining.crawler.pipeline.MasterListDatabasePipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
