@@ -1,9 +1,6 @@
 package sg.edu.smu.webmining.crawler.offlinework;
 
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashMap;
@@ -14,13 +11,11 @@ import java.util.Map;
  */
 public class ProductPageUpdater {
 
-
   public Map<String, Object> parse(InputStream is) throws IOException {
-    final Document doc = Jsoup.parse(is, "UTF-8", "https://amazon.com/");
+    final ProductPage page = new ProductPage(is, "UTF-8", "https://amazon.com/");
 
-    Map<String, Object> result = new LinkedHashMap<>();
-    ProductPage page = new ProductPage(doc);
-    result.put("ProductTitle", page.getProductTitle());
+    final Map<String, Object> result = new LinkedHashMap<>();
+    result.put("Product Title", page.getProductTitle());
     result.put("Brand", page.getBrand());
     result.put("AverageRating", page.getRating());
     result.put("Price", page.getPrice());
@@ -38,15 +33,13 @@ public class ProductPageUpdater {
     result.put("Product Description Table", page.getProductDescriptionTable());
     result.put("Product Information Table", page.getProductInformationTable());
     result.put("From the Manufacturer", page.getManufacturerMessage());
-
-    // TODO: add this:
-    //fields.put("Products of Other Styles", getStyleProListOrNull(page, "#variation_style_name li"));
-    //fields.put("Customers Also Shopped For", getBuyOrViewOrShopArrayOrNull(page, "#day0-sims-feature"));
-    //fields.put("Best Sellers Ranking", getRankMapOrNull(fields));
-    //fields.put("Important Information", getTextOrNull(page, "#importantInformation .content"));
-    //fields.put("Other Items Customers Buy After Viewing This", getOthersItemsCusBuyArrayOrNull(page, "#view_to_purchase-sims-feature div.a-fixed-left-grid.p13n-asin"));
-
+    result.put("Products of Other Styles", page.getOtherStyleProducts());
+    result.put("Customers Also Shopped For", page.getCustomersAlsoShoppedFor());
+    result.put("Important Information", page.getImportantInformation());
+    result.put("Other Items Customers Buy After Viewing This", page.getItemsCustomersBuyAfterViewingThis());
+    result.put("Best Sellers Rank", page.getBestSellersRank());
     return result;
   }
+
 
 }

@@ -26,6 +26,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import java.net.URLDecoder;
 
+@Deprecated
 public class MongoDBTest {
 
 	public static List<File> listFilesForFolder(final String folderPath) {

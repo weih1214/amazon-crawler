@@ -1,10 +1,14 @@
 package sg.edu.smu.webmining.crawler.offlinework;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
@@ -18,6 +22,14 @@ import java.util.stream.Collectors;
 public class ProductPage {
 
   private final Document doc;
+
+  public ProductPage(File docFile, String charsetName, String baseUri) throws IOException {
+    this(Jsoup.parse(docFile, charsetName, baseUri));
+  }
+
+  public ProductPage(InputStream is, String charsetName, String baseUri) throws IOException {
+    this(Jsoup.parse(is, charsetName, baseUri));
+  }
 
   public ProductPage(Document doc) {
     this.doc = doc;
@@ -186,6 +198,51 @@ public class ProductPage {
     }
 
     return result;
+  }
+
+  public List<String> getOtherStyleProducts() {
+    return doc.select("#variation_style_name li").stream()
+        .map(e -> e.attr("data-defaultasin"))
+        .filter(attr -> !attr.isEmpty())
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
+
+  public List<String> getCustomersAlsoShoppedFor() {
+    return parseCarouselIds(JsoupParseUtils.selectFirst(doc, "#day0-sims-feature"));
+  }
+
+  public String getImportantInformation() {
+    return JsoupParseUtils.selectText(doc, "#importantInformation .content");
+  }
+
+  public List<String> getItemsCustomersBuyAfterViewingThis() {
+    final List<String> result = new ArrayList<>();
+    final Pattern p = Pattern.compile("asin:(.{10})");
+    for (Element e : doc.select("#view_to_purchase-sims-feature div.a-fixed-left-grid.p13n-asin")) {
+      final Matcher m = p.matcher(e.attr("data-p13n-asin-metadata").replace("\"", ""));
+      if (m.find()) {
+        result.add(m.group(1));
+      }
+    }
+    return result;
+  }
+
+  public Map<String, Integer> getBestSellersRank() {
+    final Map<String, Object> table = getProductInformationTable();
+    final String rank = (String) table.getOrDefault("Best Sellers Rank", null);
+    if (rank != null) {
+      final Map<String, Integer> result = new LinkedHashMap<>();
+      final String[] rankList = rank.split("#");
+      final Pattern p = Pattern.compile("(.*?) in (.*)");
+      for (int i = 1; i < rankList.length; i++) {
+        final Matcher m = p.matcher(rankList[i].trim());
+        if (m.find()) {
+          result.put(m.group(2), Integer.parseInt(m.group(1).replace(",", "")));
+        }
+      }
+      return result;
+    }
+    return Collections.emptyMap();
   }
 
 
