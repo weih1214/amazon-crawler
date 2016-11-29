@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class ProxyHttpClientDownloader extends HttpClientDownloader {
 
-  private static final int TIMEOUT = 5 * 60; // 5min
+  private static final int TIMEOUT = 20; // 5min
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
