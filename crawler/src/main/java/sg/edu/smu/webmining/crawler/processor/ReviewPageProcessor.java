@@ -3,9 +3,8 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.pipeline.ReviewPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.ReviewDebugPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -15,244 +14,128 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ReviewPageProcessor implements PageProcessor {
-	
-	private final Site site = Site.me()
-		      .setCycleRetryTimes(Integer.MAX_VALUE)
-		      .setSleepTime(1000)
-		      .setRetryTimes(3)
-		      .setCharset("UTF-8");
-	
-	public static String[] getReviewLinks(String folderPath) {
-		List<Document> docList = ManagerTesting.load(ManagerTesting.listFilesForFolder(folderPath));
-		List<String> reviewLinks = new ArrayList<String> ();
-		for (Document doc : docList) {
-			
-			String s1 = doc.select("#revSum .a-link-emphasis.a-nowrap").attr("href");
-			if (!s1.isEmpty()) {
-			String s2 = s1.replaceAll("&reviewerType=.*?&", "&reviewerType=all_reviews&").replaceAll("&sortBy=.*", "&sortBy=recent");
-			reviewLinks.add(s2);
-			}
-		}
-		System.out.println(reviewLinks.size());
-		System.out.println(reviewLinks);
-		return reviewLinks.toArray(new String[0]);
-	}
 
-	public String getAuthorID(String authorURL) {
+  private static final Pattern URL_PRODUCT_ID_PATTERN1 = Pattern.compile("/product-reviews/(.*?)/");
+  private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
+  private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
 
-		String regexr = "profile/(.*)?/";
-		Pattern p1 = Pattern.compile(regexr);
-		Matcher m1 = p1.matcher(authorURL);
-		if (m1.find()) {
-			return m1.group(1);
-		} else {
-			return null;
-		}
-	}
+  private final Site site = Site.me()
+      .setCycleRetryTimes(Integer.MAX_VALUE)
+      .setSleepTime(1000)
+      .setRetryTimes(3)
+      .setCharset("UTF-8");
 
-	public void getVotingNumber(Page page, Document doc) {
-		Integer totalVoters = 0;
-		Integer positiveVoters = 0;
-		String s1 = doc.select("table div[style = margin-bottom:0.5em;]").text().trim();
-		String s2 = "(.*) of (.*) people";
-		Pattern p1 = Pattern.compile(s2);
-		Matcher m1 = p1.matcher(s1);
-		if (m1.find()) {
-			positiveVoters = Integer.parseInt(m1.group(1).replace(",", ""));
-			totalVoters = Integer.parseInt(m1.group(2).replace(",", ""));
-		}
-		page.putField("Positive Voters", positiveVoters);
-		page.putField("Total Voters", totalVoters);
+/*  public static String[] getReviewLinks(String folderPath) {
+    List<Document> docList = ManagerTesting.load(ManagerTesting.listFilesForFolder(folderPath));
+    List<String> reviewLinks = new ArrayList<>();
+    for (Document doc : docList) {
 
-	}
+      String s1 = doc.select("#revSum .a-link-emphasis.a-nowrap").attr("href");
+      if (!s1.isEmpty()) {
+        String s2 = s1.replaceAll("&reviewerType=.*?&", "&reviewerType=all_reviews&").replaceAll("&sortBy=.*", "&sortBy=recent");
+        reviewLinks.add(s2);
+      }
+    }
+    System.out.println(reviewLinks.size());
+    System.out.println(reviewLinks);
+    return reviewLinks.toArray(new String[0]);
+  }*/
 
-	public String getreviewID(String s1) {
-		String s2 = "/customer-reviews/(.*)?/";
-		Pattern p1 = Pattern.compile(s2);
-		Matcher m1 = p1.matcher(s1);
-		if (m1.find()) {
-			return m1.group(1);
-		} else {
-			return null;
-		}
-	}
+  private static String parseWithRegexp(Page page, Pattern pattern) {
+    final String url = page.getUrl().toString();
+    final Matcher m = pattern.matcher(url);
+    if (m.find()) {
+      return m.group(1);
+    }
+    return null;
+  }
 
-	public String getProductIDForPro(String s1) {
-		String s2 = "/product-reviews/(.*)?/";
-		Pattern p1 = Pattern.compile(s2);
-		Matcher m1 = p1.matcher(s1);
-		if (m1.find()) {
-			return m1.group(1);
-		} else {
-			return null;
-		}
-	}
+  private static String parseReviewId(Page page) {
+    return parseWithRegexp(page, URL_REVIEW_ID_PATTERN);
+  }
 
-	public String getProductIDForCus(String s1) {
-		String s2 = "ASIN=(.{10})";
-		Pattern p1 = Pattern.compile(s2);
-		Matcher m1 = p1.matcher(s1);
-		if (m1.find()) {
-			return m1.group(1);
-		} else {
-			return null;
-		}
-	}
+  private static String parseProductIdFromListPage(Page page) {
+    return parseWithRegexp(page, URL_PRODUCT_ID_PATTERN1);
+  }
 
-	public Date getReviewDate(String s1) {
-		SimpleDateFormat parser = new SimpleDateFormat("MMMMMMMM d yyyy");
-		parser.setTimeZone(TimeZone.getTimeZone("UTC"));
+  private static String parseProductIdFromCustomerPage(Page page) {
+    return parseWithRegexp(page, URL_PRODUCT_ID_PATTERN2);
+  }
 
-		Date date = null;
-		try {
-			date = parser.parse(s1);
-			return date;
-		} catch (ParseException e) {
-			e.printStackTrace();
-			return null;
-		}
+  private Review parseReviewOnListPage(Page page, Element e) {
+    return new ReviewOnPage(parseProductIdFromListPage(page), e);
+  }
 
-	}
+  private Review parseCustomerReview(Page page) {
+    final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
+    final String productId = parseProductIdFromCustomerPage(page);
+    final String reviewId = parseReviewId(page);
+    return new ReviewPage(reviewId, productId, doc);
+  }
 
-	public void parseSimpleReview(Page page, Element e) {
-		String reviewTitle, reviewID, reviewAuthor, authorID, productID, reviewDate, productInfor, verifiedPurchased, ratingString, reviewContent;
-		reviewTitle = reviewID = reviewAuthor = authorID = productID = reviewDate = productInfor = verifiedPurchased = ratingString = reviewContent = null;
-		Double rating = null;
-		reviewTitle = e.select("a[data-hook=review-title]").text();
-		reviewID = e.attr("id");
-		reviewAuthor = e.getElementsByAttributeValue("data-hook", "review-author").text();
-		authorID = getAuthorID(e.select("a[data-hook = review-author]").attr("href"));
-		productID = getProductIDForPro(page.getUrl().toString());
-		reviewDate = e.select("span[data-hook= review-date]").text().substring(3).replace(",","");
-		productInfor = e.select("a[data-hook= format-strip]").text();
-		verifiedPurchased = e.select("span[data-hook = avp-badge]").text();
-		ratingString = e.select("i[data-hook = review-star-rating]").text().trim();
-		reviewContent = e.select("span[data-hook = review-body]").text();
-		if (!ratingString.isEmpty()) {
-			rating = Double.parseDouble(ratingString.substring(0,3));
-		}
-		Map<String, Object> reviewDoc = new LinkedHashMap<>();
-		reviewDoc.put("Review Title", reviewTitle);
-		reviewDoc.put("Review ID", reviewID);
-		reviewDoc.put("Product ID", productID);
-		reviewDoc.put("Author", reviewAuthor);
-		reviewDoc.put("Author ID", authorID);
-		reviewDoc.put("Positive Voters", 0);
-		reviewDoc.put("Total Voters", 0);
-		reviewDoc.put("Date", getReviewDate(reviewDate));
-		reviewDoc.put("Product Information", productInfor);
-		if (verifiedPurchased.isEmpty()) {
-			reviewDoc.put("Purchase Verification", false);
-		} else {
-			reviewDoc.put("Purchase Verification", true);
-		}
-		reviewDoc.put("Review Rating", rating);
-		reviewDoc.put("Review Content", reviewContent);
-		page.putField(reviewTitle, reviewDoc);
-	}
+  private void parseProductReviews(Page page) {
+    final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
+    for (Element e : doc.select("#cm_cr-review_list div.a-section.review")) {
+      final String commentNo = e.select("span.review-comment-total.aok-hidden").text().trim();
+      final String helpfulVotes = e.select("span.review-votes").text().trim();
+      if ((Integer.parseInt(commentNo) != 0) || helpfulVotes.contains("found this helpful")) {
+        final String reviewUrl = e.select("a.a-size-base.a-link-normal.review-title.a-color-base.a-text-bold").attr("href");
+        if (!reviewUrl.isEmpty()) {
+          // TODO: logger
+          //System.out.println(reviewUrl);
+          page.addTargetRequest(reviewUrl);
+        }
+      } else {
+        final Review review = parseReviewOnListPage(page, e);
+        page.putField(review.getId(), review.asMap());
+      }
+    }
+  }
 
-	public void parseCustomerReviews(Page page) {
-		Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
-		String reviewTitle, reviewID, reviewAuthor, authorID, productID, reviewDate, productInfor, verifiedPurchased, ratingString, reviewContent;
-		reviewTitle = reviewID = reviewAuthor = authorID = productID = reviewDate = productInfor = verifiedPurchased = ratingString = reviewContent = null;
-		Double rating = 0.0;
-		reviewTitle = doc.select("table div[style = margin-bottom:0.5em;] b").first().text();
-		reviewID = getreviewID(page.getUrl().toString());
-		reviewAuthor = doc.select("table div[style = margin-bottom:0.5em;] span[style = font-weight: bold;]").text();
-		authorID = getAuthorID(doc.select("table div[style = margin-bottom:0.5em;] div[style = float:left;] a").attr("href"));
-		productID = getProductIDForCus(page.getUrl().toString());
-		reviewDate = doc.select("table div[style = margin-bottom:0.5em;] nobr").text().replace(",","");
-		productInfor = doc.select("table div.tiny b").text();
-		verifiedPurchased = doc.select("table div.tiny span.crVerifiedStripe b").text();
-		ratingString = doc.select("table div[style = margin-bottom:0.5em;] img").attr("alt").trim();
-		reviewContent = doc.select("table div.reviewText").text();
-		if (!ratingString.isEmpty()) {
-			rating = Double.parseDouble(ratingString.substring(0,3));
-		}
+  public void process(Page page) {
+    final String url = page.getUrl().toString();
+    if (url.contains("product-reviews")) {
+      parseProductReviews(page);
+      final String nextLink = page.getHtml().css("#cm_cr-pagination_bar .a-pagination li.a-last a").links().toString();
+      if (!nextLink.isEmpty()) {
+        page.addTargetRequest(nextLink);
+      }
+    } else if (url.contains("customer-reviews")) {
+      final Review review = parseCustomerReview(page);
+      page.putField(review.getId(), review.asMap());
+    }
+  }
 
-		page.putField("Review Title", reviewTitle);
-		page.putField("Review ID", reviewID);
-		page.putField("Product ID", productID);
-		page.putField("Author", reviewAuthor);
-		page.putField("Author ID", authorID);
-		getVotingNumber(page, doc);
-		page.putField("Date", getReviewDate(reviewDate));
-		page.putField("Product Information", productInfor);
-		if (verifiedPurchased.isEmpty()) {
-			page.putField("Purchase Verification", false);
-		} else {
-			page.putField("Purchase Verification", true);
-		}
-		page.putField("Review Rating", rating);
-		page.putField("Review Content", reviewContent);
-		System.out.println(page.getResultItems().getAll().toString());
-	}
+  @Override
+  public Site getSite() {
+    return site;
+  }
 
-	public void parseProductReviews(Page page) {
-		Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
-		Elements result = doc.select("#cm_cr-review_list div.a-section.review");
-		for (Element temp: result) {
-			String commentNo = temp.select("span.review-comment-total.aok-hidden").text().trim();
-			String helpfulVotes = temp.select("span.review-votes").text().trim();
-			if ((Integer.parseInt(commentNo)!=0) || helpfulVotes.contains("found this helpful")) {
-				String reviewLink = temp.select("a.a-size-base.a-link-normal.review-title.a-color-base.a-text-bold").attr("href");
-				if (!reviewLink.isEmpty()) {
-					System.out.println(reviewLink);
-					page.addTargetRequest(reviewLink);
-				}
-			} else {
-					parseSimpleReview(page, temp);
-			}
-		}
-	}
+  public static void main(String[] args) {
+    final String testUrl = "https://www.amazon.com/Bose-QuietComfort-Acoustic-Cancelling-Headphones/product-reviews/B00X9KV0HU/ref=cm_cr_dp_see_all_summary?ie=UTF8&reviewerType=all_reviews&showViewpoints=1&sortBy=recent";
 
-	public void process(Page page) {
+    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
+        new DynamicProxyProvider()
+            .addSource(new FPLNetSource())
+            .addSource(new SSLProxiesOrgSource())
+    );
+    provider.startAutoRefresh();
 
-		String url = page.getUrl().toString();
-		if (url.contains("product-reviews")) {
-			parseProductReviews(page);
-			String nextLink = page.getHtml().css("#cm_cr-pagination_bar .a-pagination li.a-last a").links().toString();
-			if (!nextLink.isEmpty()) {
-				page.addTargetRequest(nextLink);
-			}
-		} else if(url.contains("customer-reviews")) {
-			parseCustomerReviews(page);
+    Spider spider = Spider.create(new ReviewPageProcessor())
+        .setDownloader(new ProxyHttpClientDownloader(provider))
+        .addPipeline(new ReviewDebugPipeline())
+        .addUrl(testUrl)
+        .thread(5);
+    spider.run();
 
-		}
-
-
-
-	}
-
-	@Override
-	public Site getSite() {
-		// TODO Auto-generated method stub
-		return site;
-
-	}
-	
-	public static void main(String[] args) {
-		 DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-			        new DynamicProxyProvider()
-			            .addSource(new FPLNetSource())
-			            .addSource(new SSLProxiesOrgSource())
-			    );
-		 provider.startAutoRefresh();
-		 Spider spider = Spider.create(new ReviewPageProcessor())
-		            .setDownloader(new ProxyHttpClientDownloader(provider))
-				 	.addPipeline(new ReviewPipeline())
-		            .addUrl(ReviewPageProcessor.getReviewLinks("E:\\melaka"))
-		            .thread(5);
-		 spider.run();
-		 provider.stopAutoRefresh();
-	}
+    provider.stopAutoRefresh();
+  }
 
 
 }
