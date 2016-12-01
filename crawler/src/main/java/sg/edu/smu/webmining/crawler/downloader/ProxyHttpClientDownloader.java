@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 /**
  * Created by weih1214 on 10/11/2016.
  */
+@Deprecated
 public class ProxyHttpClientDownloader extends HttpClientDownloader {
 
   private static final int TIMEOUT = 20; // 5min
@@ -54,7 +55,7 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
         .setConnectionRequestTimeout(site.getTimeOut())
         .setSocketTimeout(60 * 1000)
         .setConnectTimeout(site.getTimeOut())
-        .setCookieSpec(CookieSpecs.BEST_MATCH)
+        .setCookieSpec(CookieSpecs.DEFAULT)
         .setProxy(proxy);
 
     request.putExtra(Request.PROXY, proxy);
@@ -83,12 +84,14 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
 
   @Override
   public Page download(Request request, Task task) {
+    final ExecutorService threadExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "connection-thread"));
+    Future<Page> futureResponse = null;
     try {
-      final Future<Page> response = Executors.newSingleThreadExecutor().submit(() -> super.download(request, task));
+      futureResponse = threadExecutor.submit(() -> super.download(request, task));
 
       long time = System.currentTimeMillis();
       logger.debug("downloading...");
-      Page page = response.get(TIMEOUT, TimeUnit.SECONDS);
+      Page page = futureResponse.get(TIMEOUT, TimeUnit.SECONDS);
       logger.debug("downloading took: {}s", (System.currentTimeMillis() - time) / 1000);
       if (page == null) {
         final Object statusCode = request.getExtra(Request.STATUS_CODE);
@@ -104,6 +107,9 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
 
       return page;
     } catch (TimeoutException e) {
+      if (!futureResponse.isDone()) {
+        futureResponse.cancel(true);
+      }
       logger.error("downloading times out, trying download again", e);
       return addToCycleRetry(request, task.getSite());
     } catch (ExecutionException e) {
@@ -112,6 +118,10 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
     } catch (InterruptedException e) {
       logger.error("downloader thread interrupted, terminating", e);
       throw new RuntimeException(e);
+    } finally {
+      if (threadExecutor.isShutdown()) {
+        threadExecutor.shutdownNow();
+      }
     }
   }
 
@@ -125,6 +135,5 @@ public class ProxyHttpClientDownloader extends HttpClientDownloader {
   protected void onError(Request request) {
     logger.warn("error happened, but not processed");
   }
-
 
 }

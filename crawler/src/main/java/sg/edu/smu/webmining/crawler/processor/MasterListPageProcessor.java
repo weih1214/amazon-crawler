@@ -4,12 +4,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.masterlist.MySqlMasterListManager;
 import sg.edu.smu.webmining.crawler.pipeline.MasterListDatabasePipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
+import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.robotstxt.HostDirectives;
 import sg.edu.smu.webmining.crawler.robotstxt.RobotsTxtParser;
@@ -46,9 +47,6 @@ public class MasterListPageProcessor implements PageProcessor {
       .setSleepTime(1000)
       .setRetryTimes(3)
       .setCharset("UTF-8");
-
-  private boolean robotsIsUpdated = false;
-  private static HostDirectives AmazonRobots = null;
 
   private boolean isSearchStarted = false;
   private boolean isSeedPageVisited = false;
@@ -213,41 +211,6 @@ public class MasterListPageProcessor implements PageProcessor {
     }
   }
 
-  @SuppressWarnings("resource")
-  private void updateRobotsTxt() {
-    URL url = null;
-    try {
-      url = new URL("https://amazon.com/robots.txt");
-    } catch (MalformedURLException e1) {
-      // TODO Auto-generated catch block
-      e1.printStackTrace();
-    }
-    try {
-      FileUtils.copyURLToFile(url, new File("D://robots.txt"));
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    String content = null;
-    try {
-      content = new Scanner(new File("D://robots.txt")).useDelimiter("\\Z").next();
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    AmazonRobots = RobotsTxtParser.parse(content);
-    System.out.println(AmazonRobots.disallows.size());
-    System.out.println(AmazonRobots.allows.size());
-    System.out.println(AmazonRobots.disallows.toString());
-    String temp = "https://www.amazon.com/gp/sitbv3/reader/hahaha";
-    temp = temp.replaceFirst("https://www.amazon.com", "");
-    System.out.println(temp);
-    System.out.println(AmazonRobots.disallows.containsPrefixOf(temp));
-    System.out.println(AmazonRobots.isAllowed(temp));
-
-    robotsIsUpdated = true;
-  }
-
   @Override
   public Site getSite() {
     return site;
@@ -258,20 +221,24 @@ public class MasterListPageProcessor implements PageProcessor {
         new DynamicProxyProvider()
             .addSource(new FPLNetSource())
             .addSource(new SSLProxiesOrgSource())
+            .addSource(new InCloakSource())
     );
 
     try {
       provider.startAutoRefresh();
 
       try (final MySqlMasterListManager manager = new MySqlMasterListManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607")) {
+        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
-        Spider spider = Spider.create(new MasterListPageProcessor())
-            .setDownloader(new ProxyHttpClientDownloader(provider)).addPipeline(new MasterListDatabasePipeline(manager))
-            .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
-            .thread(5);
+          Spider spider = Spider.create(new DumpingPageProcessor(new MasterListPageProcessor(), new File("D:/19-Crawler/masterlist_dump/htmls")))
+              .setDownloader(downloader).addPipeline(new MasterListDatabasePipeline(manager))
+              .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
+              .thread(5);
 
-        spider.run();
-
+          long time = System.currentTimeMillis();
+          spider.run();
+          System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+        }
       }
 
     } catch (Throwable ex) {
