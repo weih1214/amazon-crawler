@@ -56,10 +56,10 @@ public abstract class Review {
     return null;
   }
 
-  public Date getDate() {
+  protected final Date getDate() {
     try {
       return DATE_FORMAT.parse(getDateString());
-    } catch (ParseException e1) {
+    } catch (ParseException e) {
       return null;
     }
   }

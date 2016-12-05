@@ -287,5 +287,7 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
         client.close();
       }
     }
+    httpClientGenerator.shutdown();
   }
+
 }

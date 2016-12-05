@@ -17,6 +17,7 @@ import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
 import us.codecraft.webmagic.Site;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -93,6 +94,10 @@ public class NHttpClientGenerator {
       }
     }
     httpClientBuilder.setDefaultCookieStore(cookieStore);
+  }
+
+  public void shutdown() throws IOException {
+    cm.shutdown();
   }
 
 }
