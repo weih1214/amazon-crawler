@@ -1,6 +1,5 @@
 package sg.edu.smu.webmining.crawler.processor;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,28 +11,19 @@ import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
-import sg.edu.smu.webmining.crawler.robotstxt.HostDirectives;
-import sg.edu.smu.webmining.crawler.robotstxt.RobotsTxtParser;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author code4crafter@gmail.com <br>
- * @since 0.3.2
+ *
  */
 public class MasterListPageProcessor implements PageProcessor {
 
@@ -124,7 +114,6 @@ public class MasterListPageProcessor implements PageProcessor {
         logger.info("MinPrice is set to {}", minPrice);
       }
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
       page.addTargetRequest(page.getUrl().toString());
     }
@@ -230,8 +219,9 @@ public class MasterListPageProcessor implements PageProcessor {
       try (final MySqlMasterListManager manager = new MySqlMasterListManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
-          Spider spider = Spider.create(new DumpingPageProcessor(new MasterListPageProcessor(), new File("D:/19-Crawler/masterlist_dump/htmls")))
-              .setDownloader(downloader).addPipeline(new MasterListDatabasePipeline(manager))
+          Spider spider = Spider.create(new MasterListPageProcessor())
+              .setDownloader(downloader)
+              .addPipeline(new MasterListDatabasePipeline(manager))
               .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
               .thread(5);
 
