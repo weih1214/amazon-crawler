@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hwei on 7/12/2016.
  */
-public class QAPageProcessor implements PageProcessor {
+public class QuestionPageProcessor implements PageProcessor {
 
     private static final Pattern QUESTION_ID_PATTERN = Pattern.compile("/-/([a-zA-Z0-9]+)/");
     private static final Pattern CATEGORY_URL_PATTERN = Pattern.compile("/ask/questions/");
@@ -99,7 +99,7 @@ public class QAPageProcessor implements PageProcessor {
         );
         provider.startAutoRefresh();
 
-        Spider spider = Spider.create(new QAPageProcessor())
+        Spider spider = Spider.create(new QuestionPageProcessor())
                 .setDownloader(new ProxyBHttpClientDownloader(provider))
                 .addPipeline(new QuestionPipeline())
                 .addUrl(testUrl)
