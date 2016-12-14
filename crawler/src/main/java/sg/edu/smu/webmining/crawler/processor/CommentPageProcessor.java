@@ -3,8 +3,9 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.pipeline.CommentPipeline;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.mongodb.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -60,20 +61,39 @@ public class CommentPageProcessor implements PageProcessor {
   }
 
   public static void main(String[] args) {
+
+    final String testUrl = "https://www.amazon.com/review/R31D05IE78MJSI/ref=cm_cd_pg_pg2?ie=UTF8&asin=B003EM6AOG&cdForum=Fx270A461Y43MBR&cdPage=2&cdThread=Tx1RKMUDSJPVEC4&store=aht#wasThisHelpful";
+
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
             .addSource(new FPLNetSource())
             .addSource(new SSLProxiesOrgSource())
     );
 
-    provider.startAutoRefresh();
-    Spider spider = Spider.create(new CommentPageProcessor())
-        .setDownloader(new ProxyHttpClientDownloader(provider))
-        .addPipeline(new CommentPipeline())
-        .addUrl("https://www.amazon.com/review/RTRDKUJDZCO4B/ref=cm_cd_pg_pg1?ie=UTF8&asin=B00L9EOQCO&cdForum=FxI41PZD7HV6XF&cdPage=1&cdSort=oldest&cdThread=Tx2G64ASDNBAH46&store=amazon-home#wasThisHelpful")
-        .thread(5);
-    spider.run();
-    provider.stopAutoRefresh();
+    try {
+      provider.startAutoRefresh();
+
+      try (final GeneralMongoDBManager manager = new GeneralMongoDBManager("localhost", 27017, "CommentPage", "content")) {
+        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+
+          Spider spider = Spider.create(new CommentPageProcessor())
+                  .setDownloader(downloader)
+                  .addPipeline(new GeneralMongoDBPipeline(manager))
+                  .addUrl(testUrl)
+                  .thread(5);
+
+          long time = System.currentTimeMillis();
+          spider.run();
+          System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+        }
+      }
+
+    } catch (Throwable ex) {
+      System.err.println("Uncaught exception - " + ex.getMessage());
+      ex.printStackTrace(System.err);
+    } finally {
+      provider.stopAutoRefresh();
+    }
   }
 
 }

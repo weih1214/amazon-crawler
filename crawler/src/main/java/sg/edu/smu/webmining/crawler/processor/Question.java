@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +24,7 @@ public class Question {
 
     static {
         DATE_FORMAT = new SimpleDateFormat("MMMM d yyyy");
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PDT"));
+//        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PDT"));
     }
 
     private final Element questionElement;

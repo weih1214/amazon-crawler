@@ -4,8 +4,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.downloader.ProxyBHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.pipeline.QuestionPipeline;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.mongodb.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -97,15 +98,30 @@ public class QuestionPageProcessor implements PageProcessor {
                         .addSource(new FPLNetSource())
                         .addSource(new SSLProxiesOrgSource())
         );
-        provider.startAutoRefresh();
 
-        Spider spider = Spider.create(new QuestionPageProcessor())
-                .setDownloader(new ProxyBHttpClientDownloader(provider))
-                .addPipeline(new QuestionPipeline())
-                .addUrl(testUrl)
-                .thread(5);
-        spider.run();
+        try {
+            provider.startAutoRefresh();
 
-        provider.stopAutoRefresh();
+            try (final GeneralMongoDBManager manager = new GeneralMongoDBManager("localhost", 27017, "QuestionPage", "content")) {
+                try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+
+                    Spider spider = Spider.create(new QuestionPageProcessor())
+                            .setDownloader(downloader)
+                            .addPipeline(new GeneralMongoDBPipeline(manager))
+                            .addUrl(testUrl)
+                            .thread(5);
+
+                    long time = System.currentTimeMillis();
+                    spider.run();
+                    System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+                }
+            }
+
+        } catch (Throwable ex) {
+            System.err.println("Uncaught exception - " + ex.getMessage());
+            ex.printStackTrace(System.err);
+        } finally {
+            provider.stopAutoRefresh();
+        }
     }
 }

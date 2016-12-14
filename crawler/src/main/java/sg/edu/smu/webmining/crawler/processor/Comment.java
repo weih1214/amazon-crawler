@@ -5,10 +5,7 @@ import org.jsoup.nodes.Element;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,7 +24,7 @@ public class Comment {
 
   static {
     DATE_FORMAT = new SimpleDateFormat("MMM d yyyy h:m:s a z");
-    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PST"));
+//    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PST"));
   }
 
   private static Date parseDateQuietly(String dateString) {
@@ -112,21 +109,24 @@ public class Comment {
     final Element element = getDateElement();
     final String html = element.html();
     if (html.contains("<br>")) {
-      final String[] lines = html.split("<br>");
-      final Matcher m = DATE_PATTERN.matcher(lines[0].trim());
-      if (m.find()) {
-        final String dateString = m.group(1).replace(",", "");
-        return parseDateQuietly(dateString);
-      }
+        final String[] lines = html.split("<br>");
+        final List<String> date = Arrays.asList(lines[0].trim().split(" "));
+        final Integer lastIndex = date.size()-1;
+        StringBuilder builder = new StringBuilder();
+        for (Integer i = 5; i >= 0; i -= 1) {
+            builder.append(date.get(lastIndex-i)+" ");
+        }
+        return parseDateQuietly(builder.toString().trim().replace(",",""));
     } else {
-      final String text = element.text();
-      final Matcher m = DATE_PATTERN.matcher(text);
-      if (m.find()) {
-        final String dateString = m.group(1).replace(",", "");
-        return parseDateQuietly(dateString);
-      }
+        final String text = element.text();
+        List<String> date = Arrays.asList(text.split(" "));
+        final Integer lastIndex = date.size()-1;
+        StringBuilder builder = new StringBuilder();
+        for (Integer i = 5; i >= 0; i -= 1) {
+            builder.append(date.get(lastIndex-i)+" ");
+        }
+        return parseDateQuietly(builder.toString().trim().replace(",",""));
     }
-    return null;
   }
 
   public Date getLastEditDate() {
@@ -134,11 +134,13 @@ public class Comment {
     final String s1 = element.html();
     if (s1.contains("<br>")) {
       String[] s2 = s1.split("<br>");
-      final Matcher m = DATE_PATTERN.matcher(s2[1].trim());
-      if (m.find()) {
-        final String lastDateString = m.group(1).replace(",", "");
-        return parseDateQuietly(lastDateString);
+      final List<String> date = Arrays.asList(s2[1].split(" "));
+      final Integer lastIndex = date.size()-1;
+      StringBuilder builder = new StringBuilder();
+      for (Integer i = 5; i >= 0; i -= 1) {
+        builder.append(date.get(lastIndex-i)+" ");
       }
+      return parseDateQuietly(builder.toString().trim().replace(",",""));
     }
     return null;
   }
