@@ -13,19 +13,19 @@ import us.codecraft.webmagic.pipeline.Pipeline;
  */
 public class AnswerPipeline implements Pipeline {
 
-    @Override
-    public void process(ResultItems resultItems, Task task) {
-        // To connect to MongoDB server
-        @SuppressWarnings("resource")
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
+  @Override
+  public void process(ResultItems resultItems, Task task) {
+    // To connect to MongoDB server
+    @SuppressWarnings("resource")
+    MongoClient mongoClient = new MongoClient("localhost", 27017);
 
-        // Now connect to your databases and switch to the Collection
-        @SuppressWarnings({})
-        MongoDatabase db = mongoClient.getDatabase("AnswerPage");
-        MongoCollection<Document> collection = db.getCollection("content");
-        for (String key: resultItems.getAll().keySet()) {
-            Document answerDoc = new Document(resultItems.get(key));
-            collection.insertOne(answerDoc);
-        }
+    // Now connect to your databases and switch to the Collection
+    @SuppressWarnings({})
+    MongoDatabase db = mongoClient.getDatabase("AnswerPage");
+    MongoCollection<Document> collection = db.getCollection("content");
+    for (String key : resultItems.getAll().keySet()) {
+      Document answerDoc = new Document(resultItems.get(key));
+      collection.insertOne(answerDoc);
     }
+  }
 }
