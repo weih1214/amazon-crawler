@@ -20,12 +20,9 @@ public class Comment {
   private static final Pattern COMMENT_ID_PATTERN = Pattern.compile("_(.*)");
   private static final Pattern DATE_PATTERN = Pattern.compile(" (.{23,26}PDT)");
 
-  private static final DateFormat DATE_FORMAT;
+//  Pattern n = Pattern.compile("(Aug|Feb) \\d\\d?, \\d{4} \\d{1,2}:\\d{2}:\\d{2} (AM|PM)(?: (.{3}))?")
 
-  static {
-    DATE_FORMAT = new SimpleDateFormat("MMM d yyyy h:m:s a z");
-//    DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PST"));
-  }
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM d yyyy h:m:s a z");
 
   private static Date parseDateQuietly(String dateString) {
     try {
