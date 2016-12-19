@@ -15,7 +15,7 @@ public class Offer {
 
   private static final Pattern SELLER_ID_PATTERN = Pattern.compile("seller=([A-Z0-9]{14})");
   private static final Pattern SELLER_RATING_PATTERN = Pattern.compile("(\\d(\\.\\d)?) out of \\d");
-  private static final Pattern POSITIVE_PERCENT_PATTERN = Pattern.compile("(\\d\\d?)%");
+  private static final Pattern POSITIVE_PERCENT_PATTERN = Pattern.compile("(\\d\\d{0,2}?)%");
   private static final Pattern TOTAL_RATINGS_PATTERN = Pattern.compile("\\(([\\d,]+?) total ratings\\)");
   private static final Pattern RECORD_PERIOD_PATTERN = Pattern.compile("over the past (\\d\\d?) months");
 
@@ -34,7 +34,7 @@ public class Offer {
     if (!nameString.isEmpty()) {
       return nameString;
     } else {
-      final String altString = nameElement.attr("alt");
+      final String altString = nameElement.select("img").attr("alt");
       if (!altString.isEmpty()) {
         return altString;
       }
@@ -43,12 +43,13 @@ public class Offer {
   }
 
   public String getSellerId() {
-    final String sellerIdString = offerElement.select("h3.olpSellerName a").text();
+    final String sellerIdString = offerElement.select("div.olpSellerColumn h3.olpSellerName a").attr("href");
     final Matcher m = SELLER_ID_PATTERN.matcher(sellerIdString);
     if (m.find()) {
       return m.group(1);
+    } else {
+      return getSellerName();
     }
-    return null;
   }
 
   // Return 0.0 means no record; return null means parsing fails
@@ -123,7 +124,11 @@ public class Offer {
   }
 
   public String getConditionDescription() {
-    return offerElement.select("div.olpConditionColumn div.comments").text();
+    final String conditionDescription = offerElement.select("div.olpConditionColumn div.comments").text();
+    if (!conditionDescription.isEmpty()) {
+      return conditionDescription;
+    }
+    return null;
   }
 
   private String getPrice() {
@@ -131,7 +136,8 @@ public class Offer {
   }
 
   private String getShippingInformation() {
-    return offerElement.select("div.olpPriceColumn p.olpShippingInfo").text();
+    final String shippingInfo = offerElement.select("div.olpPriceColumn p.olpShippingInfo").text();
+    return shippingInfo.replace("Details", "").replaceAll("[&+]", "").trim();
   }
 
   public Map<String, Object> asMap() {
