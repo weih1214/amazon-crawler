@@ -1,5 +1,6 @@
 package sg.edu.smu.webmining.crawler.processor;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -53,6 +54,13 @@ public class OfferPageProcessor implements PageProcessor{
   @Override
   public void process(Page page) {
     final Document offerDoc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
+    // Check whether the page shows the full offer list or not
+//    final String fullListLink = offerDoc.select("div#olpOfferList p.a-text-center a").attr("href");
+//    if (!fullListLink.isEmpty()) {
+//      page.addTargetRequest(fullListLink);
+//      page.setSkip(true);
+//      return;
+//    }
     // Pagination Part
     final String nextLink = getNextLink(offerDoc.select("ul.a-pagination li").last());
     if (nextLink != null) {
@@ -62,7 +70,7 @@ public class OfferPageProcessor implements PageProcessor{
     final String productId = extractProductId(page.getUrl().toString());
     for (Element element: offerElements) {
       final Offer offer = new Offer(productId, element);
-      page.putField(offer.getSellerId(), offer.asMap());
+      page.putField(RandomStringUtils.random(10, true, true), offer.asMap());
     }
 
 

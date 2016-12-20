@@ -145,6 +145,27 @@ public class MasterListPageProcessor implements PageProcessor {
     throw new RuntimeException("Cannot extract the page price range");
   }
 
+  private boolean checkBoundary(Pair<Double, Double> priceRange) {
+    final Double lowerBoundary = 100 * priceRange.getLeft();
+    final Double upperBoundary = 100 * priceRange.getRight();
+    if (lowerBoundary.intValue() == upperBoundary.intValue()) {
+      return false;
+    }
+    return true;
+  }
+
+  private void contentProcess(Page page) {
+    page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal")
+        .links().regex("/dp/(.*?)/").all());
+    page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
+
+    final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
+    if (nextPageUrl != null) {
+      page.addTargetRequest(nextPageUrl);
+      logger.info("next page scheduled {}", nextPageUrl);
+    }
+  }
+
   @Override
   public void process(Page page) {
     logger.info("processing page {}", page.getUrl().toString());
@@ -173,29 +194,26 @@ public class MasterListPageProcessor implements PageProcessor {
         page.setSkip(true);
       } else if (numItems > maxNumItems) {
         final Pair<Double, Double> priceRange = getPagePriceRange(page);
-        final double mid = (priceRange.getLeft() + priceRange.getRight()) / 2;
-        logger.info("splitting price range [{}-{}], [{}-{}]", priceRange.getLeft(), mid, mid,
-            priceRange.getRight());
+        // Return true if range is splitable; return false,then start process
+        if (checkBoundary(priceRange)) {
+          final double mid = (priceRange.getLeft() + priceRange.getRight()) / 2;
+          logger.info("splitting price range [{}-{}], [{}-{}]", priceRange.getLeft(), mid, mid,
+              priceRange.getRight());
 
-        final String leftPartUrl = seedPage + "&low-price=" + priceRange.getLeft() + "&high-price=" + mid;
-        page.addTargetRequest(leftPartUrl);
-        logger.info("url scheduled {}", leftPartUrl);
+          final String leftPartUrl = seedPage + "&low-price=" + priceRange.getLeft() + "&high-price=" + mid;
+          page.addTargetRequest(leftPartUrl);
+          logger.info("url scheduled {}", leftPartUrl);
 
-        final String rightPartUrl = seedPage + "&low-price=" + mid + "&high-price=" + priceRange.getRight();
-        page.addTargetRequest(rightPartUrl);
-        logger.info("url scheduled {}", rightPartUrl);
+          final String rightPartUrl = seedPage + "&low-price=" + mid + "&high-price=" + priceRange.getRight();
+          page.addTargetRequest(rightPartUrl);
+          logger.info("url scheduled {}", rightPartUrl);
 
-        page.setSkip(true);
-      } else {
-        page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal")
-            .links().regex("/dp/(.*?)/").all());
-        page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
-
-        final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
-        if (nextPageUrl != null) {
-          page.addTargetRequest(nextPageUrl);
-          logger.info("next page scheduled {}", nextPageUrl);
+          page.setSkip(true);
+        } else {
+          contentProcess(page);
         }
+      } else {
+        contentProcess(page);
       }
     }
   }
