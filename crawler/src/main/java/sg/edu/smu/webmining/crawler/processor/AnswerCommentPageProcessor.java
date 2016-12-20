@@ -13,6 +13,7 @@ import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 public class AnswerCommentPageProcessor implements PageProcessor{
 
   private static final Pattern QUESTION_ID_PATTERN = Pattern.compile("/(T[a-zA-Z0-9]+)/");
+  private static final Pattern ANSWER_ID_PATTERN = Pattern.compile("Anchor=(Mx[0-9A-Z]{13,14})");
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -54,18 +56,18 @@ public class AnswerCommentPageProcessor implements PageProcessor{
   public void process(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
     final String nextLink = getNextLink(doc.select("div.cdPageSelectorPagination a"));
+    final String answerId = page.getRequest().getExtra("Answer ID").toString();
     if(nextLink != null) {
-      page.addTargetRequest(nextLink);
+      Request request = new Request(nextLink).putExtra("Answer ID", answerId);
+      page.addTargetRequest(request);
     }
     final Elements answerCommentElements = doc.select("div.cdCommentList div.cdComment");
     final String answerText = doc.select("span#long_cdAnswerDisplay").text().trim();
     final String questionId = getQuestionId(doc.select("span.cdQuestionLink a").attr("href"));
     for (Element element: answerCommentElements) {
-      final AnswerComment ansComment = new AnswerComment(element, questionId, answerText);
+      final AnswerComment ansComment = new AnswerComment(element, questionId, answerId, answerText);
       page.putField(ansComment.getAnswerCommentId(), ansComment.asMap());
     }
-
-
   }
 
   @Override
@@ -73,9 +75,18 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     return site;
   }
 
+  public static String getAnswerId(String testUrl) {
+    final Matcher m = ANSWER_ID_PATTERN.matcher(testUrl);
+    if (m.find()){
+      return m.group(1);
+    }
+    return null;
+  }
+
   public static void main(String[] args) {
 
-    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_NOREF?ie=UTF8&asin=B003EM8008&cdForum=FxGU9L9IR0HOWY&cdPage=1&cdThread=Tx2QRCXY0HAAYA";
+    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
+    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -92,7 +103,7 @@ public class AnswerCommentPageProcessor implements PageProcessor{
           Spider spider = Spider.create(new AnswerCommentPageProcessor())
               .setDownloader(downloader)
               .addPipeline(new GeneralMongoDBPipeline(manager))
-              .addUrl(testUrl)
+              .addRequest(request)
               .thread(5);
 
           long time = System.currentTimeMillis();

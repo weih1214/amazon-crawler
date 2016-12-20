@@ -31,11 +31,13 @@ public class AnswerComment {
 
   private final Element answerCommentElement;
   private final String questionId;
+  private final String answerId;
   private final String answerText;
 
-  public AnswerComment(Element answerCommentElement, String questionId, String answerText) {
+  public AnswerComment(Element answerCommentElement, String questionId, String answerId, String answerText) {
     this.answerCommentElement = answerCommentElement;
     this.questionId = questionId;
+    this.answerId = answerId;
     this.answerText = answerText;
   }
 
@@ -49,6 +51,10 @@ public class AnswerComment {
       }
     }
     return null;
+  }
+
+  public String getAnswerId() {
+    return answerId;
   }
 
   public String getQuestionId() { return questionId; }
@@ -85,10 +91,6 @@ public class AnswerComment {
     return null;
   }
 
-  public String getAnswerText() {
-    return answerText;
-  }
-
   public String getAnswerCommentText() {
     return answerCommentElement.select("div.cdCommentText").text();
   }
@@ -96,11 +98,11 @@ public class AnswerComment {
   public Map<String, Object> asMap() {
     final Map<String, Object> answerCommentDoc = new LinkedHashMap<>();
     answerCommentDoc.put("Answer Comment ID", getAnswerCommentId());
+    answerCommentDoc.put("Answer ID", getAnswerId());
     answerCommentDoc.put("Question ID", getQuestionId());
     answerCommentDoc.put("Author Name", getAuthorName());
     answerCommentDoc.put("Author ID", getAuthorId());
     answerCommentDoc.put("Post Date", getPostDate());
-    answerCommentDoc.put("Answer Text", getAnswerText());
     answerCommentDoc.put("Answer Comment Text", getAnswerCommentText());
     return answerCommentDoc;
   }
