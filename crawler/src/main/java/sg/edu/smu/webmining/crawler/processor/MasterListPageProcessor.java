@@ -16,6 +16,7 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,8 @@ public class MasterListPageProcessor implements PageProcessor {
 
   private static final Pattern HIGH_PRICE_P = Pattern.compile("&high-price=([\\d.]+)");
   private static final Pattern LOW_PRICE_P = Pattern.compile("&low-price=([\\d.]+)");
+
+  private static final DecimalFormat PRICE_FORMAT = new DecimalFormat("#.##");
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -145,18 +148,14 @@ public class MasterListPageProcessor implements PageProcessor {
     throw new RuntimeException("Cannot extract the page price range");
   }
 
-  private boolean checkBoundary(Pair<Double, Double> priceRange) {
+  private boolean checkPriceRange(Pair<Double, Double> priceRange) {
     final Double lowerBoundary = 100 * priceRange.getLeft();
     final Double upperBoundary = 100 * priceRange.getRight();
-    if (lowerBoundary.intValue() == upperBoundary.intValue()) {
-      return false;
-    }
-    return true;
+    return lowerBoundary.intValue() != upperBoundary.intValue();
   }
 
-  private void contentProcess(Page page) {
-    page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal")
-        .links().regex("/dp/(.*?)/").all());
+  private void processContent(Page page) {
+    page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all());
     page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
 
     final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
@@ -194,26 +193,29 @@ public class MasterListPageProcessor implements PageProcessor {
         page.setSkip(true);
       } else if (numItems > maxNumItems) {
         final Pair<Double, Double> priceRange = getPagePriceRange(page);
-        // Return true if range is splitable; return false,then start process
-        if (checkBoundary(priceRange)) {
+        // Return true if range is splittable; return false, then start process
+        if (checkPriceRange(priceRange)) {
           final double mid = (priceRange.getLeft() + priceRange.getRight()) / 2;
-          logger.info("splitting price range [{}-{}], [{}-{}]", priceRange.getLeft(), mid, mid,
-              priceRange.getRight());
+          logger.info("splitting price range [{}-{}], [{}-{}]", priceRange.getLeft(), mid, mid, priceRange.getRight());
 
-          final String leftPartUrl = seedPage + "&low-price=" + priceRange.getLeft() + "&high-price=" + mid;
+          final String sLeft = PRICE_FORMAT.format(priceRange.getLeft());
+          final String sMid = PRICE_FORMAT.format(mid);
+          final String sRight = PRICE_FORMAT.format(priceRange.getRight());
+
+          final String leftPartUrl = seedPage + "&low-price=" + sLeft + "&high-price=" + sMid;
           page.addTargetRequest(leftPartUrl);
           logger.info("url scheduled {}", leftPartUrl);
 
-          final String rightPartUrl = seedPage + "&low-price=" + mid + "&high-price=" + priceRange.getRight();
+          final String rightPartUrl = seedPage + "&low-price=" + sMid + "&high-price=" + sRight;
           page.addTargetRequest(rightPartUrl);
           logger.info("url scheduled {}", rightPartUrl);
 
           page.setSkip(true);
         } else {
-          contentProcess(page);
+          processContent(page);
         }
       } else {
-        contentProcess(page);
+        processContent(page);
       }
     }
   }
