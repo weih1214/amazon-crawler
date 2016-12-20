@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  */
 public class Offer {
 
-  private static final Pattern SELLER_ID_PATTERN = Pattern.compile("seller=([A-Z0-9]{14})");
+  private static final Pattern SELLER_ID_PATTERN = Pattern.compile("seller=([A-Z0-9]{13,14})");
   private static final Pattern SELLER_RATING_PATTERN = Pattern.compile("(\\d(\\.\\d)?) out of \\d");
   private static final Pattern POSITIVE_PERCENT_PATTERN = Pattern.compile("(\\d\\d{0,2}?)%");
   private static final Pattern TOTAL_RATINGS_PATTERN = Pattern.compile("\\(([\\d,]+?) total ratings\\)");
@@ -135,6 +135,14 @@ public class Offer {
     return offerElement.select("div.olpPriceColumn span.olpOfferPrice").text();
   }
 
+  private boolean getFulfillmentInfo() {
+    final String deliveryInfo = offerElement.select("div.olpDeliveryColumn").text();
+    if (deliveryInfo.contains("Fulfillment by Amazon")) {
+      return true;
+    }
+    return false;
+  }
+
   private String getShippingInformation() {
     final String shippingInfo = offerElement.select("div.olpPriceColumn p.olpShippingInfo").text();
     return shippingInfo.replace("Details", "").replaceAll("[&+]", "").trim();
@@ -151,6 +159,7 @@ public class Offer {
     offerDoc.put("Condition", getCondition());
     offerDoc.put("Condition Description", getConditionDescription());
     offerDoc.put("Price", getPrice());
+    offerDoc.put("Fulfillment by Amazon", getFulfillmentInfo());
     offerDoc.put("Shipping", getShippingInformation());
     return offerDoc;
   }

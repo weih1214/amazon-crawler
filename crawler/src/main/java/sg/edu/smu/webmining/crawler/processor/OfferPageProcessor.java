@@ -51,16 +51,24 @@ public class OfferPageProcessor implements PageProcessor{
     }
   }
 
+  private boolean isFullList(Element fullListElement) {
+    final String urlInfo = fullListElement.text();
+    if (urlInfo.contains("Show all offers")) {
+      return false;
+    }
+    return true;
+  }
+
   @Override
   public void process(Page page) {
     final Document offerDoc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
     // Check whether the page shows the full offer list or not
-//    final String fullListLink = offerDoc.select("div#olpOfferList p.a-text-center a").attr("href");
-//    if (!fullListLink.isEmpty()) {
-//      page.addTargetRequest(fullListLink);
-//      page.setSkip(true);
-//      return;
-//    }
+    final Element fullListElement = offerDoc.select("div#olpOfferList p.a-text-center a").last();
+    if (!isFullList(fullListElement)) {
+      page.addTargetRequest(fullListElement.attr("href"));
+      page.setSkip(true);
+      return;
+    }
     // Pagination Part
     final String nextLink = getNextLink(offerDoc.select("ul.a-pagination li").last());
     if (nextLink != null) {
