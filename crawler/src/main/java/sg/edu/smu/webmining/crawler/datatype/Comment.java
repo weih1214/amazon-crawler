@@ -106,23 +106,23 @@ public class Comment {
     final Element element = getDateElement();
     final String html = element.html();
     if (html.contains("<br>")) {
-        final String[] lines = html.split("<br>");
-        final List<String> date = Arrays.asList(lines[0].trim().split(" "));
-        final Integer lastIndex = date.size()-1;
-        StringBuilder builder = new StringBuilder();
-        for (Integer i = 5; i >= 0; i -= 1) {
-            builder.append(date.get(lastIndex-i)+" ");
-        }
-        return parseDateQuietly(builder.toString().trim().replace(",",""));
+      final String[] lines = html.split("<br>");
+      final List<String> date = Arrays.asList(lines[0].trim().split(" "));
+      final Integer lastIndex = date.size() - 1;
+      StringBuilder builder = new StringBuilder();
+      for (Integer i = 5; i >= 0; i -= 1) {
+        builder.append(date.get(lastIndex - i)).append(" ");
+      }
+      return parseDateQuietly(builder.toString().trim().replace(",", ""));
     } else {
-        final String text = element.text();
-        List<String> date = Arrays.asList(text.split(" "));
-        final Integer lastIndex = date.size()-1;
-        StringBuilder builder = new StringBuilder();
-        for (Integer i = 5; i >= 0; i -= 1) {
-            builder.append(date.get(lastIndex-i)+" ");
-        }
-        return parseDateQuietly(builder.toString().trim().replace(",",""));
+      final String text = element.text();
+      List<String> date = Arrays.asList(text.split(" "));
+      final Integer lastIndex = date.size() - 1;
+      StringBuilder builder = new StringBuilder();
+      for (Integer i = 5; i >= 0; i -= 1) {
+        builder.append(date.get(lastIndex - i)).append(" ");
+      }
+      return parseDateQuietly(builder.toString().trim().replace(",", ""));
     }
   }
 
@@ -132,12 +132,12 @@ public class Comment {
     if (s1.contains("<br>")) {
       String[] s2 = s1.split("<br>");
       final List<String> date = Arrays.asList(s2[1].split(" "));
-      final Integer lastIndex = date.size()-1;
+      final Integer lastIndex = date.size() - 1;
       StringBuilder builder = new StringBuilder();
       for (Integer i = 5; i >= 0; i -= 1) {
-        builder.append(date.get(lastIndex-i)+" ");
+        builder.append(date.get(lastIndex - i)).append(" ");
       }
-      return parseDateQuietly(builder.toString().trim().replace(",",""));
+      return parseDateQuietly(builder.toString().trim().replace(",", ""));
     }
     return null;
   }

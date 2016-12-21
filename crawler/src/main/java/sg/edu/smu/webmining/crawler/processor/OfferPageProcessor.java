@@ -53,10 +53,7 @@ public class OfferPageProcessor implements PageProcessor{
 
   private boolean isFullList(Element fullListElement) {
     final String urlInfo = fullListElement.text();
-    if (urlInfo.contains("Show all offers")) {
-      return false;
-    }
-    return true;
+    return !urlInfo.contains("Show all offers");
   }
 
   @Override

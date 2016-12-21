@@ -6,7 +6,6 @@ import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.pipeline.Pipeline;
 
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 /**
  * Created by mtkachenko.2015 on 30/11/2016.

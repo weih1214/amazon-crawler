@@ -1,21 +1,21 @@
-package sg.edu.smu.webmining.crawler.livejournal;
+package sg.edu.smu.webmining.crawler.cli;
 
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.HtmlPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
+import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,11 +23,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by hwei on 20/12/2016.
+ * Created by mtkachenko on 21/12/2016.
  */
-public class LiveJournalPageProcessor implements PageProcessor {
+public class UrlListCrawler implements PageProcessor {
 
-  private static Pattern FILENAME_PATTERN = Pattern.compile("http://(.*)\\.livejournal\\.com");
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final AtomicInteger total = new AtomicInteger(1);
 
@@ -37,15 +37,20 @@ public class LiveJournalPageProcessor implements PageProcessor {
       .setRetryTimes(3)
       .setCharset("UTF-8");
 
+  private final Pattern filenamePattern;
+
+  private UrlListCrawler(Pattern filenamePattern) {
+    this.filenamePattern = filenamePattern;
+  }
 
   @Override
   public void process(Page page) {
     if (page == null) {
+      logger.debug("page is null");
       return;
     }
-
     String filename = null;
-    final Matcher m = FILENAME_PATTERN.matcher(page.getRequest().toString());
+    final Matcher m = filenamePattern.matcher(page.getRequest().toString());
     if (m.find()) {
       filename = m.group(1);
     }
@@ -53,7 +58,9 @@ public class LiveJournalPageProcessor implements PageProcessor {
     if (filename != null && !html.isEmpty()) {
       page.putField("filename", filename);
       page.putField("raw_html", html);
-      System.out.println(total.getAndIncrement() + " files have been stored!");
+
+      System.out.print('.');
+      total.incrementAndGet();
     }
   }
 
@@ -76,15 +83,32 @@ public class LiveJournalPageProcessor implements PageProcessor {
   }
 
   public static void main(String[] args) throws IOException {
-    final String urlListFilename = "D://livejournal//livejournal.txt";
-    final String outDir = "D://liveresult";
+    if (args.length != 3) {
+      System.out.println("USAGE: <url-list> <filename-pattern> <output-dir>");
+      System.exit(1);
+    }
+
+    final String urlListFilename = args[0];
+    final String filenameRegexp = args[1];
+    final String outputDirName = args[2];
+
+    final File outDir = new File(outputDirName);
+    if (outDir.exists() && !outDir.isDirectory()) {
+      System.err.println("The <output-dir> is not a directory!");
+      System.exit(1);
+    } else if (!outDir.exists() && !outDir.mkdirs()) {
+      System.err.println("Cannot create <output-dir>!");
+      System.exit(1);
+    }
 
     final List<String> urls = readURLs(urlListFilename);
+    final Pattern filenamePattern = Pattern.compile(filenameRegexp);
 
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
+    final DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
             .addSource(new FPLNetSource())
             .addSource(new SSLProxiesOrgSource())
+            .addSource(new InCloakSource())
     );
 
     try {
@@ -92,8 +116,7 @@ public class LiveJournalPageProcessor implements PageProcessor {
 
       try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider, Sets.newHashSet(404, 410))) {
 
-
-        Spider spider = Spider.create(new LiveJournalPageProcessor())
+        Spider spider = Spider.create(new UrlListCrawler(filenamePattern))
             .setDownloader(downloader)
             .addPipeline(new HtmlPipeline(outDir))
             .thread(10);

@@ -29,8 +29,10 @@ import us.codecraft.webmagic.utils.UrlUtils;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +52,15 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
 
   private final ProxyProvider proxyProvider;
 
+  private final Set<Integer> stopStatusCodes;
+
   public ProxyNHttpClientDownloader(ProxyProvider proxyProvider) {
+    this(proxyProvider, Collections.emptySet());
+  }
+
+  public ProxyNHttpClientDownloader(ProxyProvider proxyProvider, Set<Integer> stopStatusCodes) {
     this.proxyProvider = proxyProvider;
+    this.stopStatusCodes = stopStatusCodes;
   }
 
   private CloseableHttpAsyncClient getHttpClient(Site site) {
@@ -102,8 +111,8 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
         }
         onSuccess(request);
         return page;
-      } else if(statusCode == 404 || statusCode == 410) {
-        logger.debug("page no longer exists, skip this page");
+      } else if (stopStatusCodes.contains(statusCode)) {
+        logger.debug("status code {} is in stop list, terminate downloading", statusCode);
         return null;
       } else {
         logger.debug("status code {}, rescheduling: {}", statusCode, request.getUrl());

@@ -73,11 +73,7 @@ public class ProxyBHttpClientDownloader extends AbstractDownloader {
     CloseableHttpClient httpClient = httpClients.get(domain);
     if (httpClient == null) {
       synchronized (this) {
-        httpClient = httpClients.get(domain);
-        if (httpClient == null) {
-          httpClient = httpClientGenerator.getClient(site);
-          httpClients.put(domain, httpClient);
-        }
+        httpClient = httpClients.computeIfAbsent(domain, k -> httpClientGenerator.getClient(site));
       }
     }
     return httpClient;

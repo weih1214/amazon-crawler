@@ -137,10 +137,7 @@ public class Offer {
 
   private boolean getFulfillmentInfo() {
     final String deliveryInfo = offerElement.select("div.olpDeliveryColumn").text();
-    if (deliveryInfo.contains("Fulfillment by Amazon")) {
-      return true;
-    }
-    return false;
+    return deliveryInfo.contains("Fulfillment by Amazon");
   }
 
   private String getShippingInformation() {
