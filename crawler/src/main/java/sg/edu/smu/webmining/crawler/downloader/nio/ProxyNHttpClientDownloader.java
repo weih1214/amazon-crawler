@@ -102,6 +102,9 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
         }
         onSuccess(request);
         return page;
+      } else if(statusCode == 404 || statusCode == 410) {
+        logger.debug("page no longer exists, skip this page");
+        return null;
       } else {
         logger.debug("status code {}, rescheduling: {}", statusCode, request.getUrl());
         return addToCycleRetry(request, site);
