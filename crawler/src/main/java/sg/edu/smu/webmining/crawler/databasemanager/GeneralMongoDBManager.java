@@ -1,4 +1,4 @@
-package sg.edu.smu.webmining.crawler.mongodb;
+package sg.edu.smu.webmining.crawler.databasemanager;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -28,8 +28,8 @@ public class GeneralMongoDBManager implements AutoCloseable, MongoDBManager {
   }
 
   @Override
-  public void update(Map<String, Object> resultMap) throws Exception {
-    final Document doc = new Document(resultMap);
+  public void update(Map<String, Object> resultMap, String source) throws Exception {
+    final Document doc = new Document(resultMap).append("source", source);
     mongoCollection.insertOne(doc);
   }
 

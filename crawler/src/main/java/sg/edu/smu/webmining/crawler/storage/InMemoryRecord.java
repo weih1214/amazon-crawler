@@ -14,7 +14,7 @@ public class InMemoryRecord implements Record {
   private final String url;
   private final String content;
 
-  private String id = null;
+  private String id = "Null";
 
   private long timestamp = -1;
 
@@ -56,6 +56,14 @@ public class InMemoryRecord implements Record {
   @Override
   public String getId() {
     return id;
+  }
+
+  public void display() {
+    try {
+      System.out.println(id + "\n" + timestamp + "\n"+ url + "\n" + getFingerprint() + "\n" + content);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   void setTimestamp(long timestamp) {
