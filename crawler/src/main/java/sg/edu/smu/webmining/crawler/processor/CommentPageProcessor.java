@@ -3,10 +3,12 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
 import sg.edu.smu.webmining.crawler.datatype.Comment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.mongodb.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -54,6 +56,8 @@ public class CommentPageProcessor implements PageProcessor {
       final Comment comment = new Comment(reviewId, e);
       page.putField(comment.getCommentId(), comment.asMap());
     }
+    page.putField("Page Content", page.getRawText());
+    page.putField("Page Url", url);
   }
 
   @Override
@@ -74,18 +78,20 @@ public class CommentPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      try (final GeneralMongoDBManager manager = new GeneralMongoDBManager("localhost", 27017, "CommentPage", "content")) {
-        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "CommentPage", "content")) {
+        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
-          Spider spider = Spider.create(new CommentPageProcessor())
-                  .setDownloader(downloader)
-                  .addPipeline(new GeneralMongoDBPipeline(manager))
-                  .addUrl(testUrl)
-                  .thread(5);
+            Spider spider = Spider.create(new CommentPageProcessor())
+                .setDownloader(downloader)
+                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
+                .addUrl(testUrl)
+                .thread(5);
 
-          long time = System.currentTimeMillis();
-          spider.run();
-          System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+            long time = System.currentTimeMillis();
+            spider.run();
+            System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+          }
         }
       }
 

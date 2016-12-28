@@ -3,11 +3,14 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
 import sg.edu.smu.webmining.crawler.datatype.Review;
 import sg.edu.smu.webmining.crawler.datatype.ReviewOnPage;
 import sg.edu.smu.webmining.crawler.datatype.ReviewPage;
-import sg.edu.smu.webmining.crawler.downloader.ProxyHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.pipeline.ReviewDebugPipeline;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -111,6 +114,8 @@ public class ReviewPageProcessor implements PageProcessor {
       final Review review = parseCustomerReview(page);
       page.putField(review.getId(), review.asMap());
     }
+    page.putField("Page Content", page.getRawText());
+    page.putField("Page Url", page.getUrl().toString());
   }
 
   @Override
@@ -126,16 +131,33 @@ public class ReviewPageProcessor implements PageProcessor {
             .addSource(new FPLNetSource())
             .addSource(new SSLProxiesOrgSource())
     );
-    provider.startAutoRefresh();
 
-    Spider spider = Spider.create(new ReviewPageProcessor())
-        .setDownloader(new ProxyHttpClientDownloader(provider))
-        .addPipeline(new ReviewDebugPipeline())
-        .addUrl(testUrl)
-        .thread(5);
-    spider.run();
+    try {
+      provider.startAutoRefresh();
 
-    provider.stopAutoRefresh();
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "ReviewPage", "content")) {
+        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+
+            Spider spider = Spider.create(new ReviewPageProcessor())
+                .setDownloader(downloader)
+                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
+                .addUrl(testUrl)
+                .thread(5);
+
+            long time = System.currentTimeMillis();
+            spider.run();
+            System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+          }
+        }
+      }
+
+    } catch (Throwable ex) {
+      System.err.println("Uncaught exception - " + ex.getMessage());
+      ex.printStackTrace(System.err);
+    } finally {
+      provider.stopAutoRefresh();
+    }
   }
 
 

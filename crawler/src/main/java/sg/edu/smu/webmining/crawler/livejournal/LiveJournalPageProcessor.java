@@ -29,7 +29,7 @@ public class LiveJournalPageProcessor implements PageProcessor {
 
   private static Pattern FILENAME_PATTERN = Pattern.compile("http://(.*)\\.livejournal\\.com");
 
-  private final AtomicInteger total = new AtomicInteger(1);
+  private final AtomicInteger total = new AtomicInteger(45287);
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -76,7 +76,7 @@ public class LiveJournalPageProcessor implements PageProcessor {
   }
 
   public static void main(String[] args) throws IOException {
-    final String urlListFilename = "D://livejournal//livejournal.txt";
+    final String urlListFilename = "D://urls_to_process.txt";
     final String outDir = "D://liveresult";
 
     final List<String> urls = readURLs(urlListFilename);

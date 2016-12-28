@@ -4,10 +4,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
 import sg.edu.smu.webmining.crawler.datatype.Answer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.mongodb.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -72,6 +74,8 @@ public class AnswerPageProcessor implements PageProcessor {
       final Answer answerContent = new Answer(questionId, productId, e);
       page.putField(answerContent.getAnswerId(), answerContent.asMap());
     }
+    page.putField("Page Content", page.getRawText());
+    page.putField("Page Url", page.getUrl().toString());
     // Pagination
     final String nextLink = doc.select("div.cdPageSelectorPagination").first().children().last().attr("href");
     if (!nextLink.isEmpty()) {
@@ -97,18 +101,20 @@ public class AnswerPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      try (final GeneralMongoDBManager manager = new GeneralMongoDBManager("localhost", 27017, "AnswerPage", "content")) {
-        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "AnswerPage", "content")) {
+        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
-          Spider spider = Spider.create(new AnswerPageProcessor())
-              .setDownloader(downloader)
-              .addPipeline(new GeneralMongoDBPipeline(manager))
-              .addUrl(testUrl)
-              .thread(5);
+            Spider spider = Spider.create(new AnswerPageProcessor())
+                .setDownloader(downloader)
+                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
+                .addUrl(testUrl)
+                .thread(5);
 
-          long time = System.currentTimeMillis();
-          spider.run();
-          System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+            long time = System.currentTimeMillis();
+            spider.run();
+            System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+          }
         }
       }
 
