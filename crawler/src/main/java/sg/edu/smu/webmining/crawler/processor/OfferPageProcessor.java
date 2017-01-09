@@ -6,15 +6,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
-import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
 import sg.edu.smu.webmining.crawler.datatype.Offer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileStorage;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -69,10 +69,10 @@ public class OfferPageProcessor implements PageProcessor{
       return;
     }
     // Pagination Part
-    final String nextLink = getNextLink(offerDoc.select("ul.a-pagination li").last());
-    if (nextLink != null) {
-      page.addTargetRequest(nextLink);
-    }
+//    final String nextLink = getNextLink(offerDoc.select("ul.a-pagination li").last());
+//    if (nextLink != null) {
+//      page.addTargetRequest(nextLink);
+//    }
     final Elements offerElements = offerDoc.select("div#olpOfferList div.olpOffer");
     final String productId = extractProductId(page.getUrl().toString());
     for (Element element: offerElements) {
@@ -102,12 +102,12 @@ public class OfferPageProcessor implements PageProcessor{
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "OfferPage", "content")) {
-        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+        try (final MysqlFileStorage mysqlFileStorage = new MysqlFileStorage("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607", "D:\\Record")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new OfferPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
+                .addPipeline(new NewRecordPipeline(mysqlFileStorage, new GeneralMongoDBPipeline(mongoManager)))
                 .addUrl(testUrl)
                 .thread(5);
 
@@ -117,7 +117,6 @@ public class OfferPageProcessor implements PageProcessor{
           }
         }
       }
-
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);

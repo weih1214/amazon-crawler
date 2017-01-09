@@ -13,11 +13,9 @@ public class InMemoryRecord implements Record {
 
   private final String url;
   private final String content;
-
-  private String id = "Null";
-
+  private Integer id = null;
+  private String fileLocation = null;
   private long timestamp = -1;
-
   private String md5 = null;
 
   public InMemoryRecord(String url, String content) {
@@ -54,7 +52,7 @@ public class InMemoryRecord implements Record {
   }
 
   @Override
-  public String getId() {
+  public Integer getId() {
     return id;
   }
 
@@ -70,8 +68,18 @@ public class InMemoryRecord implements Record {
     this.timestamp = timestamp;
   }
 
-  void setId(String id) {
+  public void setId(Integer id) {
     this.id = id;
+  }
+
+  @Override
+  public String getLocation() {
+    return fileLocation;
+  }
+
+  @Override
+  public void setLocation(String fullPath) {
+    this.fileLocation = fullPath;
   }
 
 }

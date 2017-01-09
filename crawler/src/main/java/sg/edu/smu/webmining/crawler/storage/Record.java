@@ -30,6 +30,14 @@ public interface Record {
   /**
    * @return valid id if the record is stored, null otherwise
    */
-  public String getId();
+  public Integer getId();
+
+  // set id
+  public void setId(Integer id);
+
+  public void setLocation(String fullPath);
+
+  public String getLocation();
+
 
 }
