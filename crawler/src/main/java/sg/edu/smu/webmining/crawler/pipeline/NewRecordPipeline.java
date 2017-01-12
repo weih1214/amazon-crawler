@@ -1,8 +1,6 @@
 package sg.edu.smu.webmining.crawler.pipeline;
 
-import sg.edu.smu.webmining.crawler.storage.BasicRecord;
-import sg.edu.smu.webmining.crawler.storage.FileStorage;
-import sg.edu.smu.webmining.crawler.storage.Record;
+import sg.edu.smu.webmining.crawler.storage.FileManager;
 import sg.edu.smu.webmining.crawler.storage.ex.StorageException;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Task;
@@ -13,17 +11,16 @@ import us.codecraft.webmagic.pipeline.Pipeline;
  */
 public class NewRecordPipeline implements Pipeline {
 
-  private final FileStorage filestorage;
+  private final FileManager filestorage;
 
-  public NewRecordPipeline(FileStorage filestorage) {
+  public NewRecordPipeline(FileManager filestorage) {
     this.filestorage = filestorage;
   }
 
   @Override
   public void process(ResultItems resultItems, Task task) {
     try {
-      final Record record = filestorage.put(new BasicRecord(resultItems.get("Page Url"), resultItems.get("Page Content")));
-      final String source = record.getId();
+      final String source = filestorage.put(resultItems.get("Page Url"), (String) resultItems.get("Page Content"));
       resultItems.getAll().remove("Page Content");
       resultItems.getAll().remove("Page Url");
       resultItems.put("source", source);

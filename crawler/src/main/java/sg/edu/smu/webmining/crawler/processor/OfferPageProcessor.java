@@ -14,7 +14,7 @@ import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
-import sg.edu.smu.webmining.crawler.storage.MysqlFileStorage;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -102,7 +102,7 @@ public class OfferPageProcessor implements PageProcessor {
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "OfferPage", "content")) {
-        try (final MysqlFileStorage mysqlFileStorage = new MysqlFileStorage("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607", "D:\\Record")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607", "D:\\Record")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new OfferPageProcessor())

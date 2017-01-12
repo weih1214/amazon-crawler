@@ -2,18 +2,16 @@ package sg.edu.smu.webmining.crawler.storage;
 
 import sg.edu.smu.webmining.crawler.storage.ex.StorageException;
 
+import java.io.InputStream;
+
 /**
  * Created by mtkachenko.2015 on 28/11/2016.
  */
-public interface FileStorage {
+public interface FileManager {
 
-  /**
-   * Puts a record into the storage. Updates the record (id and timestamp)
-   *
-   * @param record a record to be stored
-   * @return updated record
-   */
-  public Record put(Record record) throws StorageException;
+  public String put(String url, String content) throws StorageException;
+
+  public String put(String url, InputStream content) throws StorageException;
 
   /**
    * Gets record by the internal record id.

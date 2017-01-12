@@ -1,18 +1,20 @@
 package sg.edu.smu.webmining.crawler.storage;
 
 import com.mysql.jdbc.Statement;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import sg.edu.smu.webmining.crawler.storage.ex.StorageException;
 
 import java.io.*;
 import java.sql.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
  * Created by hwei on 6/1/2017.
  */
-public class MysqlFileStorage implements FileStorage, AutoCloseable {
+public class MysqlFileManager implements FileManager, AutoCloseable {
 
   /**
    * Created by hwei on 6/1/2017.
@@ -29,20 +31,20 @@ public class MysqlFileStorage implements FileStorage, AutoCloseable {
 
     private StorageRecord(String id, String url, File recordFile, String md5) {
       this.id = id;
-      this.recordFile = recordFile;
       this.url = url;
+      this.recordFile = recordFile;
       this.md5 = md5;
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-      return new BufferedInputStream(new FileInputStream(recordFile));
+      return new BufferedInputStream(new GZIPInputStream(new FileInputStream(recordFile)));
     }
 
     @Override
     public String getContent() throws IOException {
       if (lazyContent == null) {
-        lazyContent = FileUtils.readFileToString(recordFile);
+        lazyContent = IOUtils.toString(getInputStream(), "UTF-8");
       }
       return lazyContent;
     }
@@ -76,7 +78,7 @@ public class MysqlFileStorage implements FileStorage, AutoCloseable {
 
   private final File storageDir;
 
-  public MysqlFileStorage(String dbLocation, String username, String password, File storageDir) throws SQLException {
+  public MysqlFileManager(String dbLocation, String username, String password, File storageDir) throws SQLException {
     connection = DriverManager.getConnection(dbLocation, username, password);
     connection.setAutoCommit(false);
     this.insertStatement = connection.prepareStatement("INSERT INTO test (url, md5, location) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
@@ -84,7 +86,7 @@ public class MysqlFileStorage implements FileStorage, AutoCloseable {
     this.storageDir = storageDir;
   }
 
-  public MysqlFileStorage(String dbLocation, String username, String password, String storageDir) throws SQLException {
+  public MysqlFileManager(String dbLocation, String username, String password, String storageDir) throws SQLException {
     this(dbLocation, username, password, new File(storageDir));
   }
 
@@ -96,16 +98,31 @@ public class MysqlFileStorage implements FileStorage, AutoCloseable {
       throw new IOException("The record path is not a dir: " + recordDir);
     }
     final File recordFile = new File(recordDir, recordName);
-    try (OutputStream out = new BufferedOutputStream(new FileOutputStream(recordFile))) {
+    try (final BufferedOutputStream out = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(recordFile)))) {
       IOUtils.copy(in, out);
     }
   }
 
   @Override
-  public Record put(Record record) throws StorageException {
+  public String put(String url, String content) throws StorageException {
     try {
-      final String url = record.getURL();
-      final String md5 = record.getMD5();
+      return put(url, new ByteArrayInputStream(content.getBytes("UTF-8")));
+    } catch (UnsupportedEncodingException e) {
+      throw new StorageException(e);
+    }
+  }
+
+  @Override
+  public String put(String url, InputStream content) throws StorageException {
+    try {
+      if (!content.markSupported()) {
+        final ByteArrayOutputStream copyOutputStream = new ByteArrayOutputStream();
+        IOUtils.copy(content, copyOutputStream);
+        content = new ByteArrayInputStream(copyOutputStream.toByteArray());
+      }
+
+      final String md5 = DigestUtils.md5Hex(content);
+      content.reset();
       final String subDirName = md5.substring(0, 2);
       insertStatement.setString(1, url);
       insertStatement.setString(2, md5);
@@ -113,22 +130,23 @@ public class MysqlFileStorage implements FileStorage, AutoCloseable {
       if (insertStatement.executeUpdate() == 1) {
         final ResultSet rs = insertStatement.getGeneratedKeys();
         if (rs.next()) {
-          int source = rs.getInt(1);
-          if (record instanceof BasicRecord) {
-            ((BasicRecord) record).setId(String.valueOf(source));
-          }
-          save(record.getInputStream(), new File(storageDir, subDirName), String.valueOf(source));
+          int id = rs.getInt(1);
+          final String sId = String.valueOf(id);
+          save(content, new File(storageDir, subDirName), sId);
+          connection.commit();
+          return sId;
         }
       }
-      connection.commit();
-      return record;
+
+      connection.rollback();
+      throw new StorageException("Cannot store the record");
     } catch (SQLException | IOException e) {
       try {
         connection.rollback();
-      } catch (SQLException rollbackException) {
-        throw new StorageException(rollbackException);
+      } catch (SQLException rbe) {
+        throw new StorageException("Cannot store the record", rbe);
       }
-      throw new StorageException(e);
+      throw new StorageException("Cannot store the record", e);
     }
   }
 
