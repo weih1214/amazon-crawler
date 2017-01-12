@@ -9,16 +9,16 @@ import java.io.InputStream;
 /**
  * Created by mtkachenko.2015 on 19/12/2016.
  */
-public class InMemoryRecord implements Record {
+public class BasicRecord implements Record {
 
   private final String url;
   private final String content;
-  private Integer id = null;
-  private String fileLocation = null;
-  private long timestamp = -1;
+  private String id = null;
   private String md5 = null;
 
-  public InMemoryRecord(String url, String content) {
+  private long timestamp = -1;
+
+  public BasicRecord(String url, String content) {
     this.url = url;
     this.content = content;
   }
@@ -44,7 +44,7 @@ public class InMemoryRecord implements Record {
   }
 
   @Override
-  public String getFingerprint() throws IOException {
+  public String getMD5() throws IOException {
     if (md5 == null) {
       md5 = DigestUtils.md5Hex(getInputStream());
     }
@@ -52,34 +52,16 @@ public class InMemoryRecord implements Record {
   }
 
   @Override
-  public Integer getId() {
+  public String getId() {
     return id;
-  }
-
-  public void display() {
-    try {
-      System.out.println(id + "\n" + timestamp + "\n"+ url + "\n" + getFingerprint() + "\n" + content);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 
   void setTimestamp(long timestamp) {
     this.timestamp = timestamp;
   }
 
-  public void setId(Integer id) {
+  void setId(String id) {
     this.id = id;
-  }
-
-  @Override
-  public String getLocation() {
-    return fileLocation;
-  }
-
-  @Override
-  public void setLocation(String fullPath) {
-    this.fileLocation = fullPath;
   }
 
 }

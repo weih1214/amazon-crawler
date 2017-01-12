@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hwei on 16/12/2016.
  */
-public class OfferPageProcessor implements PageProcessor{
+public class OfferPageProcessor implements PageProcessor {
 
   private static final Pattern PRODUCT_ID_PATTERN = Pattern.compile("(?:/offer-listing)?/([0-9A-Z]{10})/");
 
@@ -38,7 +38,7 @@ public class OfferPageProcessor implements PageProcessor{
 
   public String extractProductId(String urlString) {
     final Matcher m = PRODUCT_ID_PATTERN.matcher(urlString);
-    if(m.find()) {
+    if (m.find()) {
       return m.group(1);
     }
     return null;
@@ -46,7 +46,7 @@ public class OfferPageProcessor implements PageProcessor{
 
   public String getNextLink(Element paginationElement) {
     final String s1 = paginationElement.className();
-    if(s1.contains("a-disabled")) {
+    if (s1.contains("a-disabled")) {
       return null;
     } else {
       return paginationElement.select("a").attr("href");
@@ -75,7 +75,7 @@ public class OfferPageProcessor implements PageProcessor{
 //    }
     final Elements offerElements = offerDoc.select("div#olpOfferList div.olpOffer");
     final String productId = extractProductId(page.getUrl().toString());
-    for (Element element: offerElements) {
+    for (Element element : offerElements) {
       final Offer offer = new Offer(productId, element);
       page.putField(RandomStringUtils.random(10, true, true), offer.asMap());
     }
@@ -107,7 +107,8 @@ public class OfferPageProcessor implements PageProcessor{
 
             Spider spider = Spider.create(new OfferPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new NewRecordPipeline(mysqlFileStorage, new GeneralMongoDBPipeline(mongoManager)))
+                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(testUrl)
                 .thread(5);
 

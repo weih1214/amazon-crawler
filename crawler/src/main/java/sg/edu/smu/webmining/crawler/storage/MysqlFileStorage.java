@@ -1,95 +1,157 @@
 package sg.edu.smu.webmining.crawler.storage;
 
 import com.mysql.jdbc.Statement;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import sg.edu.smu.webmining.crawler.storage.ex.StorageException;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.*;
+
 
 /**
  * Created by hwei on 6/1/2017.
  */
 public class MysqlFileStorage implements FileStorage, AutoCloseable {
 
+  /**
+   * Created by hwei on 6/1/2017.
+   */
+  public static class StorageRecord implements Record {
+
+    private final File recordFile;
+    private final String url;
+    private final String id;
+    private final String md5;
+    private final long timestamp = -1;
+
+    private String lazyContent;
+
+    private StorageRecord(String id, String url, File recordFile, String md5) {
+      this.id = id;
+      this.recordFile = recordFile;
+      this.url = url;
+      this.md5 = md5;
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+      return new BufferedInputStream(new FileInputStream(recordFile));
+    }
+
+    @Override
+    public String getContent() throws IOException {
+      if (lazyContent == null) {
+        lazyContent = FileUtils.readFileToString(recordFile);
+      }
+      return lazyContent;
+    }
+
+    @Override
+    public String getURL() {
+      return url;
+    }
+
+    @Override
+    public long getTimestamp() {
+      return timestamp;
+    }
+
+    @Override
+    public String getMD5() {
+      return md5;
+    }
+
+    @Override
+    public String getId() {
+      return id;
+    }
+
+  }
+
   private final Connection connection;
-  private final String insertString = "INSERT INTO test (url, md5, location) VALUES(?, ?, ?)";
+
   private final PreparedStatement insertStatement;
   private final PreparedStatement fetchStatement;
 
-  private final String globalDir;
+  private final File storageDir;
 
-  public MysqlFileStorage(String location, String user, String password, String globalDir) throws SQLException {
-    this.connection = DriverManager.getConnection(location, user, password);
-    this.insertStatement = connection.prepareStatement(insertString, Statement.RETURN_GENERATED_KEYS);
+  public MysqlFileStorage(String dbLocation, String username, String password, File storageDir) throws SQLException {
+    connection = DriverManager.getConnection(dbLocation, username, password);
+    connection.setAutoCommit(false);
+    this.insertStatement = connection.prepareStatement("INSERT INTO test (url, md5, location) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
     this.fetchStatement = connection.prepareStatement("SELECT * FROM test WHERE id = ?");
-    this.globalDir = globalDir;
+    this.storageDir = storageDir;
   }
-  //
-  public void save(InputStream in, String dirPath, Integer source) throws IOException {
-    new File(dirPath).mkdirs();
-    final String fullPath = dirPath + source;
-    final Path destination = Paths.get(fullPath);
-    Files.copy(in, destination);
+
+  public MysqlFileStorage(String dbLocation, String username, String password, String storageDir) throws SQLException {
+    this(dbLocation, username, password, new File(storageDir));
+  }
+
+  private void save(InputStream in, File recordDir, String recordName) throws IOException {
+    if (!recordDir.exists() && !recordDir.mkdirs()) {
+      throw new IOException("Cannot create the record dir: " + recordDir);
+    }
+    if (recordDir.exists() && !recordDir.isDirectory()) {
+      throw new IOException("The record path is not a dir: " + recordDir);
+    }
+    final File recordFile = new File(recordDir, recordName);
+    try (OutputStream out = new BufferedOutputStream(new FileOutputStream(recordFile))) {
+      IOUtils.copy(in, out);
+    }
   }
 
   @Override
-  public Record put(Record record) throws IOException {
-    final String url = record.getURL();
-//    final String md5 = record.getFingerprint();
-    final String md5 = RandomStringUtils.random(10, true, true);
-    final String specificPath = "\\" + md5.substring(1, 3) + "\\";
-    final String dirPath = globalDir + specificPath;
-    Integer source = 0;
+  public Record put(Record record) throws StorageException {
     try {
+      final String url = record.getURL();
+      final String md5 = record.getMD5();
+      final String subDirName = md5.substring(0, 2);
       insertStatement.setString(1, url);
       insertStatement.setString(2, md5);
-      insertStatement.setString(3, dirPath);
+      insertStatement.setString(3, subDirName);
       if (insertStatement.executeUpdate() == 1) {
-        ResultSet rs = insertStatement.getGeneratedKeys();
+        final ResultSet rs = insertStatement.getGeneratedKeys();
         if (rs.next()) {
-          source = rs.getInt(1);
-          record.setId(source);
+          int source = rs.getInt(1);
+          if (record instanceof BasicRecord) {
+            ((BasicRecord) record).setId(String.valueOf(source));
+          }
+          save(record.getInputStream(), new File(storageDir, subDirName), String.valueOf(source));
         }
       }
-    } catch (SQLException e) {
-      e.printStackTrace();
+      connection.commit();
+      return record;
+    } catch (SQLException | IOException e) {
+      try {
+        connection.rollback();
+      } catch (SQLException rollbackException) {
+        throw new StorageException(rollbackException);
+      }
+      throw new StorageException(e);
     }
-    save(record.getInputStream(), dirPath, source);
-    return record;
   }
 
   @Override
-  public Record get(Integer id) throws FileNotFoundException {
+  public Record get(String id) throws StorageException {
     try {
-      fetchStatement.setInt(1, id);
+      fetchStatement.setInt(1, Integer.valueOf(id));
       final ResultSet rs = fetchStatement.executeQuery();
-      String url = null;
-      String location = null;
-      String fileLocation = null;
-      String md5 = null;
-      InputStream in = null;
       if (rs.next()) {
-        url = rs.getString("url");
-        location = rs.getString("location");
-        md5 = rs.getString("md5");
-        fileLocation = location + id;
+        final String url = rs.getString("url");
+        final String location = rs.getString("location");
+        final String md5 = rs.getString("md5");
+        return new StorageRecord(id, url, new File(new File(storageDir, location), id), md5);
       }
-      in = new FileInputStream(fileLocation);
-      final String content = IOUtils.toString(in, "UTF-8");
-      return new StorageRecord(url, content, id, fileLocation, md5, in);
-    } catch (SQLException | IOException e) {
-      e.printStackTrace();
+      return null;
+    } catch (SQLException e) {
+      throw new StorageException(e);
     }
-//    InMemoryRecord record =
-    return null;
   }
 
   @Override
   public void close() throws Exception {
     connection.close();
   }
+
 }

@@ -25,19 +25,11 @@ public interface Record {
   /**
    * @return md5 hash of the input stream
    */
-  public String getFingerprint() throws IOException;
+  public String getMD5() throws IOException;
 
   /**
    * @return valid id if the record is stored, null otherwise
    */
-  public Integer getId();
-
-  // set id
-  public void setId(Integer id);
-
-  public void setLocation(String fullPath);
-
-  public String getLocation();
-
+  public String getId();
 
 }

@@ -12,25 +12,24 @@ import us.codecraft.webmagic.pipeline.Pipeline;
  */
 public class GeneralMongoDBPipeline implements Pipeline {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final MongoDBManager manager;
+  private final MongoDBManager manager;
 
-    public GeneralMongoDBPipeline(MongoDBManager manager) {
-        this.manager = manager;
+  public GeneralMongoDBPipeline(MongoDBManager manager) {
+    this.manager = manager;
+  }
+
+  @Override
+  public void process(ResultItems resultItems, Task task) {
+    final String source = resultItems.get("source").toString();
+    resultItems.getAll().remove("source");
+    for (String key : resultItems.getAll().keySet()) {
+      try {
+        manager.update(resultItems.get(key), source);
+      } catch (Exception e) {
+        logger.error("exception happened, when updating db", e);
+      }
     }
-
-    @Override
-    public void process(ResultItems resultItems, Task task) {
-        final String source = resultItems.get("source").toString();
-        resultItems.getAll().remove("source");
-        for (String key: resultItems.getAll().keySet()) {
-            try {
-                manager.update(resultItems.get(key), source);
-            } catch (Exception e) {
-                logger.error("exception happened, when updating db", e);
-            }
-        }
-
-    }
+  }
 }

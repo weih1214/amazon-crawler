@@ -1,7 +1,6 @@
 package sg.edu.smu.webmining.crawler.storage;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import sg.edu.smu.webmining.crawler.storage.ex.StorageException;
 
 /**
  * Created by mtkachenko.2015 on 28/11/2016.
@@ -14,7 +13,7 @@ public interface FileStorage {
    * @param record a record to be stored
    * @return updated record
    */
-  public Record put(Record record) throws IOException;
+  public Record put(Record record) throws StorageException;
 
   /**
    * Gets record by the internal record id.
@@ -22,6 +21,6 @@ public interface FileStorage {
    * @param id record id
    * @return stored record
    */
-  public Record get(Integer id) throws FileNotFoundException;
+  public Record get(String id) throws StorageException;
 
 }

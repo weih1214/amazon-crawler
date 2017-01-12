@@ -2,7 +2,7 @@ package sg.edu.smu.webmining.crawler.pipeline;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import sg.edu.smu.webmining.crawler.databasemanager.MysqlManager;
-import sg.edu.smu.webmining.crawler.storage.InMemoryRecord;
+import sg.edu.smu.webmining.crawler.storage.BasicRecord;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -10,6 +10,7 @@ import us.codecraft.webmagic.pipeline.Pipeline;
 /**
  * Created by hwei on 21/12/2016.
  */
+@Deprecated
 public class RecordPipeline implements Pipeline {
 
   private final MysqlManager manager;
@@ -25,7 +26,7 @@ public class RecordPipeline implements Pipeline {
 
   @Override
   public void process(ResultItems resultItems, Task task) {
-    final InMemoryRecord record = new InMemoryRecord(resultItems.get("Page Url"), resultItems.get("Page Content"));
+    final BasicRecord record = new BasicRecord(resultItems.get("Page Url"), resultItems.get("Page Content"));
     final String content = record.getContent();
     final String md5 = DigestUtils.md5Hex(content);
     final String url = record.getURL();
