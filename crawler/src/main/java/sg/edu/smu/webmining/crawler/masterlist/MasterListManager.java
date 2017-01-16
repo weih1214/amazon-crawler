@@ -7,7 +7,7 @@ import java.util.List;
  */
 public interface MasterListManager {
 
-  public void update(String productId, String url) throws Exception;
+  public void update(String productId, String url, String source) throws Exception;
 
   public List<String> getAllUrls() throws Exception;
 

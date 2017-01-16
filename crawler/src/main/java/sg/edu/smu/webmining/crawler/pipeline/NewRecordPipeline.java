@@ -20,9 +20,10 @@ public class NewRecordPipeline implements Pipeline {
   @Override
   public void process(ResultItems resultItems, Task task) {
     try {
-      final String source = filestorage.put(resultItems.get("Page Url"), (String) resultItems.get("Page Content"));
-      resultItems.getAll().remove("Page Content");
-      resultItems.getAll().remove("Page Url");
+      final String source = filestorage.put(resultItems.get("Page url"), (String) resultItems.get("Page content"));
+      System.out.println(source);
+      resultItems.getAll().remove("Page content");
+      resultItems.getAll().remove("Page url");
       resultItems.put("source", source);
     } catch (StorageException e) {
       e.printStackTrace();

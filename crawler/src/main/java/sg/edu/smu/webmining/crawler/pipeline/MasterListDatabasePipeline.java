@@ -27,6 +27,8 @@ public class MasterListDatabasePipeline implements Pipeline {
   public void process(ResultItems resultItems, Task task) {
     final List<String> productList = resultItems.get("product_ids");
     final List<String> urlList = resultItems.get("urls");
+    final String source = resultItems.get("source");
+    System.out.println(source);
 
     final Iterator<String> productIdIter = productList.iterator();
     final Iterator<String> urlIter = urlList.iterator();
@@ -36,7 +38,7 @@ public class MasterListDatabasePipeline implements Pipeline {
       final String url = urlIter.next();
 
       try {
-        manager.update(productId, url);
+        manager.update(productId, url, source);
       } catch (Exception e) {
         logger.error("exception happened, when updating db", e);
       }

@@ -81,8 +81,8 @@ public class MysqlFileManager implements FileManager, AutoCloseable {
   public MysqlFileManager(String dbLocation, String username, String password, File storageDir) throws SQLException {
     connection = DriverManager.getConnection(dbLocation, username, password);
     connection.setAutoCommit(false);
-    this.insertStatement = connection.prepareStatement("INSERT INTO test (url, md5, location) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-    this.fetchStatement = connection.prepareStatement("SELECT * FROM test WHERE id = ?");
+    this.insertStatement = connection.prepareStatement("INSERT INTO record (url, md5, location) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+    this.fetchStatement = connection.prepareStatement("SELECT * FROM record WHERE id = ?");
     this.storageDir = storageDir;
   }
 

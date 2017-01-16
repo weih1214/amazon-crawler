@@ -6,11 +6,13 @@ import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.masterlist.MySqlMasterListManager;
 import sg.edu.smu.webmining.crawler.pipeline.MasterListDatabasePipeline;
+import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -157,6 +159,8 @@ public class MasterListPageProcessor implements PageProcessor {
   private void processContent(Page page) {
     page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all());
     page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
+    page.putField("Page content", page.getRawText());
+    page.putField("Page Url", page.getUrl().toString());
 
     final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
     if (nextPageUrl != null) {
@@ -238,16 +242,18 @@ public class MasterListPageProcessor implements PageProcessor {
 
       try (final MySqlMasterListManager manager = new MySqlMasterListManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/masterlist", "root", "nrff201607", "D:\\masterlist")) {
 
-          Spider spider = Spider.create(new MasterListPageProcessor())
-              .setDownloader(downloader)
-              .addPipeline(new MasterListDatabasePipeline(manager))
-              .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128")
-              .thread(5);
+            Spider spider = Spider.create(new MasterListPageProcessor())
+                                  .setDownloader(downloader)
+                                  .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                                  .addPipeline(new MasterListDatabasePipeline(manager))
+                                  .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
 
-          long time = System.currentTimeMillis();
-          spider.run();
-          System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+            long time = System.currentTimeMillis();
+            spider.run();
+            System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+          }
         }
       }
 

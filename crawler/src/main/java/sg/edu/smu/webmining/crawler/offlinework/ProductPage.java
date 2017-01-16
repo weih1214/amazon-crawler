@@ -1,14 +1,10 @@
 package sg.edu.smu.webmining.crawler.offlinework;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
@@ -22,21 +18,20 @@ import java.util.stream.Collectors;
 public class ProductPage {
 
   private final Document doc;
+  private final String id;
 
-  public ProductPage(File docFile, String charsetName, String baseUri) throws IOException {
-    this(Jsoup.parse(docFile, charsetName, baseUri));
-  }
+  public ProductPage(Document doc, String id) {
 
-  public ProductPage(InputStream is, String charsetName, String baseUri) throws IOException {
-    this(Jsoup.parse(is, charsetName, baseUri));
-  }
-
-  public ProductPage(Document doc) {
     this.doc = doc;
+    this.id = id;
   }
 
   public String getProductTitle() {
     return JsoupParseUtils.selectText(doc, "#productTitle");
+  }
+
+  public String getProductId() {
+    return id;
   }
 
   public String getBrand() {
@@ -243,6 +238,31 @@ public class ProductPage {
       return result;
     }
     return Collections.emptyMap();
+  }
+
+  public Map<String, Object> asMap(){
+    Map<String, Object> productMap = new LinkedHashMap<>();
+    productMap.put("Product Title", getProductTitle());
+    productMap.put("Product Id", getProductId());
+    productMap.put("Brand", getBrand());
+    productMap.put("Price", getPrice());
+    productMap.put("Color List", getColorList());
+    productMap.put("Color ASINs", getColorASINs());
+    productMap.put("New Model List", getNewModelList());
+    productMap.put("Feature Bullets", getFeatureBullets());
+    productMap.put("Warning", getWarning());
+    productMap.put("Technical Details", getTechnicalDetails());
+    productMap.put("Manufacturer Message", getManufacturerMessage());
+    productMap.put("Product Information Table", getProductInformationTable());
+    productMap.put("Product Description Text", getProductDescriptionText());
+    productMap.put("Product Description Table", getProductDescriptionTable());
+    productMap.put("Important Information", getImportantInformation());
+    productMap.put("Best Sellers Rank", getBestSellersRank());
+    productMap.put("Customers Also Bought", getCustomersAlsoBought());
+    productMap.put("Customers Also Viewed", getCustomersAlsoViewed());
+    productMap.put("Sponsored Product List1", getSponsoredProductList1());
+    productMap.put("Sponsored Product List2", getSponsoredProductList2());
+    return productMap;
   }
 
 

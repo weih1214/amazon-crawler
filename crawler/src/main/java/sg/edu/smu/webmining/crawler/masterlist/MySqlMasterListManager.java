@@ -19,20 +19,22 @@ public class MySqlMasterListManager implements AutoCloseable, MasterListManager 
     connection = DriverManager.getConnection(location, user, password);
 
     // TODO: combine all these statements into one SQL statement
-    insertStatement = connection.prepareStatement("INSERT INTO masterlist (product_id,recent_update,urls,first_update) VALUES (?,now(),?,now())");
-    checkStatement = connection.prepareStatement("SELECT id FROM masterlist WHERE product_id = ?");
+    insertStatement = connection.prepareStatement("INSERT INTO masterlist (product_id,first_update,recent_update,url, source) VALUES (?,now(),now(),?,?)");
+    checkStatement = connection.prepareStatement("SELECT url FROM masterlist WHERE product_id = ?");
     updateStatement = connection.prepareStatement("UPDATE masterlist SET recent_update = now() WHERE product_id = ?");
   }
 
   @Override
-  public void update(String productId, String url) throws SQLException {
+  public void update(String productId, String url, String source) throws SQLException {
     checkStatement.setString(1, productId);
-    if (checkStatement.execute()) {
+    ResultSet rs = checkStatement.executeQuery();
+    if (rs.next()) {
       updateStatement.setString(1, productId);
       updateStatement.executeUpdate();
     } else {
       insertStatement.setString(1, productId);
       insertStatement.setString(2, url);
+      insertStatement.setString(3, source);
       insertStatement.executeUpdate();
     }
   }
