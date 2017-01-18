@@ -240,6 +240,22 @@ public class ProductPage {
     return Collections.emptyMap();
   }
 
+  public String getOffterLink() {
+    final String offerLink = doc.select("div#olp_feature_div a").attr("href");
+    return offerLink;
+  }
+
+  public String getQuestionLink() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("https://www.amazon.com/ask/questions/asin/").append(id).append("/ref=ask_dp_dpmw_ql_hza?isAnswered=true");
+    return sb.toString();
+  }
+
+  public String getReviewLink() {
+    final String reviewLink = doc.select("a#dp-summary-see-all-reviews").attr("href");
+    return reviewLink;
+  }
+
   public Map<String, Object> asMap(){
     Map<String, Object> productMap = new LinkedHashMap<>();
     productMap.put("Product Title", getProductTitle());
@@ -262,6 +278,9 @@ public class ProductPage {
     productMap.put("Customers Also Viewed", getCustomersAlsoViewed());
     productMap.put("Sponsored Product List1", getSponsoredProductList1());
     productMap.put("Sponsored Product List2", getSponsoredProductList2());
+    productMap.put("Offer Link", getOffterLink());
+    productMap.put("Question Link", getQuestionLink());
+    productMap.put("Review Link", getReviewLink());
     return productMap;
   }
 

@@ -56,7 +56,7 @@ public class ProductPageProcessor implements PageProcessor {
 
   public static void main(String[] args) throws SQLException {
 
-    final String[] seedpageList = new DBSeedpageManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607").get();
+    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "Masterlist", "content", "Url").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
