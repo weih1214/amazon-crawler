@@ -68,7 +68,7 @@ public class ProductPageProcessor implements PageProcessor {
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "ProductPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/product", "root", "nrff201607", "D:\\product")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\product")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new ProductPageProcessor())

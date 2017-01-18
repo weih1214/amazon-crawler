@@ -8,4 +8,5 @@ import java.util.Map;
 public interface MongoDBManager {
 
     public void update(Map<String, Object> resultMap, String source) throws Exception;
+    public void update(String productId, String url, String Source) throws Exception;
 }

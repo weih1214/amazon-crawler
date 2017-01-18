@@ -3,9 +3,9 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sg.edu.smu.webmining.crawler.databasemanager.MasterlistMongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.masterlist.MySqlMasterListManager;
-import sg.edu.smu.webmining.crawler.pipeline.MasterListDatabasePipeline;
+import sg.edu.smu.webmining.crawler.pipeline.MasterlistMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
@@ -160,7 +160,7 @@ public class MasterListPageProcessor implements PageProcessor {
     page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all());
     page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
     page.putField("Page content", page.getRawText());
-    page.putField("Page Url", page.getUrl().toString());
+    page.putField("Page url", page.getUrl().toString());
 
     final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
     if (nextPageUrl != null) {
@@ -240,14 +240,14 @@ public class MasterListPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      try (final MySqlMasterListManager manager = new MySqlMasterListManager("jdbc:mysql://127.0.0.1:3306/amazon", "root", "nrff201607")) {
+      try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager("localhost", 27017, "Masterlist", "content")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
-          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/masterlist", "root", "nrff201607", "D:\\masterlist")) {
+          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\masterlist")) {
 
             Spider spider = Spider.create(new MasterListPageProcessor())
                                   .setDownloader(downloader)
                                   .addPipeline(new NewRecordPipeline(mysqlFileStorage))
-                                  .addPipeline(new MasterListDatabasePipeline(manager))
+                                  .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
                                   .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
 
             long time = System.currentTimeMillis();

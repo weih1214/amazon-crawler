@@ -33,4 +33,7 @@ public class GeneralMongoDBManager implements AutoCloseable, MongoDBManager {
     mongoCollection.insertOne(doc);
   }
 
+  @Override
+  public void update(String productId, String url, String Source) throws Exception {}
+
 }
