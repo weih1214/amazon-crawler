@@ -30,10 +30,12 @@ public class Question {
 
   private final Element questionElement;
   private final String questionId;
+  private final String answerLink;
 
-  public Question(String questionId, Element questionElement) {
+  public Question(String questionId, Element questionElement, String answerLink) {
     this.questionElement = questionElement;
     this.questionId = questionId;
+    this.answerLink = answerLink;
   }
 //    private final String questionId
 
@@ -81,6 +83,8 @@ public class Question {
     return questionElement.select("div.cdQuestionText").text().trim();
   }
 
+  private String getAnswerLink() { return answerLink;}
+
   public Map<String, Object> asMap() {
     final Map<String, Object> questionDoc = new LinkedHashMap<>();
     questionDoc.put("Question ID", getQuestionId());
@@ -89,6 +93,7 @@ public class Question {
     questionDoc.put("Question Post Date", getQuestionPostDate());
     questionDoc.put("Product ID", getProductId());
     questionDoc.put("Question Text", getQuestionText());
+    questionDoc.put("Answer Link", getAnswerLink());
     return questionDoc;
   }
 }

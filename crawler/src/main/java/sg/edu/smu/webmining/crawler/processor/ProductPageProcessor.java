@@ -42,7 +42,6 @@ public class ProductPageProcessor implements PageProcessor {
       page.putField(productId, content.asMap());
       page.putField("Page content", page.getRawText());
       page.putField("Page url", page.getUrl().toString());
-      System.out.println(page.getUrl().toString());
     }else {
       page.setSkip(true);
     }

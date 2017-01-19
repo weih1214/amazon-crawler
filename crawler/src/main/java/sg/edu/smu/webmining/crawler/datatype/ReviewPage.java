@@ -14,11 +14,13 @@ public class ReviewPage extends Review {
 
   private final String reviewId;
   private final String productId;
+  private final String commentLink;
   private final Element doc;
 
-  public ReviewPage(String reviewId, String productId, Element reviewPage) {
+  public ReviewPage(String reviewId, String productId, Element reviewPage, String commentLink) {
     this.reviewId = reviewId;
     this.productId = productId;
+    this.commentLink = commentLink;
     doc = reviewPage;
   }
 
@@ -85,6 +87,11 @@ public class ReviewPage extends Review {
   @Override
   public Integer getTotalVotes() {
     return getVotes(2);
+  }
+
+  @Override
+  public String getCommentLink() {
+    return commentLink;
   }
 
   @Override

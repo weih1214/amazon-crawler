@@ -80,5 +80,10 @@ public class ReviewOnPage extends Review {
     return 0;
   }
 
+  @Override
+  public String getCommentLink() {
+    return null;
+  }
+
 
 }

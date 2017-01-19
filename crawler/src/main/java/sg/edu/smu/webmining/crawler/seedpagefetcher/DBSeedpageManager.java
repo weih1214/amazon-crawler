@@ -20,6 +20,7 @@ public class DBSeedpageManager implements SeedpageManager {
   private final MongoDatabase mongoDatabase;
   private final MongoCollection<Document> mongoCollection;
   private final FindIterable<Document> queryResult;
+  private final String fieldName;
 
 
   public DBSeedpageManager(String location, Integer port, String databaseName, String collectionName, String fieldName) {
@@ -27,13 +28,14 @@ public class DBSeedpageManager implements SeedpageManager {
     mongoDatabase = mongoClient.getDatabase(databaseName);
     mongoCollection = mongoDatabase.getCollection(collectionName);
     queryResult = mongoCollection.find().projection(Projections.include(fieldName));
+    this.fieldName = fieldName;
   }
 
   @Override
   public String[] get() throws SQLException {
     final List<String> seedpageList = new ArrayList<>();
     for (Document doc: queryResult) {
-      seedpageList.add(doc.get("Url").toString());
+      seedpageList.add(doc.get(fieldName).toString());
     }
     String[] seedpage = new String[seedpageList.size()];
     seedpage = seedpageList.toArray(seedpage);

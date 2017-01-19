@@ -25,7 +25,6 @@ public class ProductPage {
     this.doc = doc;
     this.id = id;
   }
-
   public String getProductTitle() {
     return JsoupParseUtils.selectText(doc, "#productTitle");
   }
@@ -241,8 +240,14 @@ public class ProductPage {
   }
 
   public String getOffterLink() {
+    StringBuilder sb = new StringBuilder(doc.baseUri());
     final String offerLink = doc.select("div#olp_feature_div a").attr("href");
-    return offerLink;
+    if (offerLink.isEmpty()) {
+      sb.append("/gp/offer-listing/").append(id);
+      return sb.toString();
+    }
+    sb.append(offerLink);
+    return sb.toString();
   }
 
   public String getQuestionLink() {
@@ -252,8 +257,20 @@ public class ProductPage {
   }
 
   public String getReviewLink() {
-    final String reviewLink = doc.select("a#dp-summary-see-all-reviews").attr("href");
-    return reviewLink;
+    StringBuilder sb = new StringBuilder(doc.baseUri());
+    String reviewLink = doc.select("a#dp-summary-see-all-reviews").attr("href").trim();
+    if (reviewLink.isEmpty()) {
+      reviewLink = doc.select("div#revSum a.a-link-emphasis").attr("href").trim();
+      if (reviewLink.isEmpty()) {
+        sb.append("/product-reviews/").append(id);
+        return sb.toString();
+      }
+      return reviewLink;
+    }
+    sb.append(reviewLink);
+    return sb.toString();
+
+
   }
 
   public Map<String, Object> asMap(){
