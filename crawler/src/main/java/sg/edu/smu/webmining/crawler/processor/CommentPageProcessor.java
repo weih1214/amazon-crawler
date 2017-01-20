@@ -3,21 +3,24 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
+import org.jsoup.select.Elements;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.Comment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +29,7 @@ import java.util.regex.Pattern;
  */
 public class CommentPageProcessor implements PageProcessor {
 
-  private static final Pattern REVIEW_ID_PATTERN = Pattern.compile("/review/([a-zA-Z0-9]+)/");
+  private static final Pattern REVIEW_ID_PATTERN = Pattern.compile("(?:/review|/customer-reviews)/([a-zA-Z0-9]+)/");
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -42,22 +45,34 @@ public class CommentPageProcessor implements PageProcessor {
     return null;
   }
 
+  private String getNextLink(Document doc) {
+    final Elements paginationElements = doc.select("div.cdPageSelectorPagination a");
+    if (!paginationElements.isEmpty()) {
+      final Element pagination = paginationElements.last();
+      if (pagination.text().contains("Next")) {
+        return pagination.attr("href");
+      }
+    }
+    return null;
+  }
 
   @Override
   public void process(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
     final String url = page.getUrl().toString();
-    final String nextURL = doc.select("div.cdPageSelectorPagination a").last().attr("href");
-    if (!nextURL.isEmpty()) {
+    final String nextURL = getNextLink(doc);
+    if (nextURL != null) {
       page.addTargetRequest(nextURL);
     }
+    System.out.println(url);
+    System.out.println(nextURL);
     for (Element e : doc.select("div.postBody")) {
       final String reviewId = parseReviewIdFromURL(url);
       final Comment comment = new Comment(reviewId, e);
       page.putField(comment.getCommentId(), comment.asMap());
     }
-    page.putField("Page Content", page.getRawText());
-    page.putField("Page Url", url);
+    page.putField("Page content", page.getRawText());
+    page.putField("Page url", url);
   }
 
   @Override
@@ -65,9 +80,9 @@ public class CommentPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws SQLException {
 
-    final String testUrl = "https://www.amazon.com/review/R31D05IE78MJSI/ref=cm_cd_pg_pg2?ie=UTF8&asin=B003EM6AOG&cdForum=Fx270A461Y43MBR&cdPage=2&cdThread=Tx1RKMUDSJPVEC4&store=aht#wasThisHelpful";
+    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "ReviewPage", "content", "Comment Link").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -79,13 +94,14 @@ public class CommentPageProcessor implements PageProcessor {
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "CommentPage", "content")) {
-        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\Comment")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new CommentPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
-                .addUrl(testUrl)
+                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new GeneralMongoDBPipeline(mongoManager))
+                .addUrl(seedpageList)
                 .thread(5);
 
             long time = System.currentTimeMillis();

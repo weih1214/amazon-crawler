@@ -4,22 +4,26 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.AnswerComment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,8 +74,8 @@ public class AnswerCommentPageProcessor implements PageProcessor{
       final AnswerComment ansComment = new AnswerComment(element, questionId, answerId, answerText);
       page.putField(ansComment.getAnswerCommentId(), ansComment.asMap());
     }
-    page.putField("Page Content", page.getRawText());
-    page.putField("Page Url", page.getUrl().toString());
+    page.putField("Page content", page.getRawText());
+    page.putField("Page url", page.getUrl().toString());
   }
 
   @Override
@@ -87,10 +91,22 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     return null;
   }
 
-  public static void main(String[] args) {
+  public static Request[] getRequestArray() throws SQLException {
+    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "AnswerPage", "content", "Answer Comment Link").get();
+    List<Request> requestList = new ArrayList <>();
+    for (String s1: seedpageList) {
+      requestList.add(new Request(s1).putExtra("Answer ID", getAnswerId(s1)));
+    }
+    Request[] requestArray = new Request[requestList.size()];
+    requestArray = requestList.toArray(requestArray);
+    return requestArray;
+  }
 
-    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
-    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
+  public static void main(String[] args) throws SQLException {
+
+//    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
+//    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
+    final Request[] requestArray = getRequestArray();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -102,13 +118,14 @@ public class AnswerCommentPageProcessor implements PageProcessor{
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "AnswerCommentPage", "content")) {
-        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\AnswerComment")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new AnswerCommentPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
-                .addRequest(request)
+                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new GeneralMongoDBPipeline(mongoManager))
+                .addRequest(requestArray)
                 .thread(5);
 
             long time = System.currentTimeMillis();

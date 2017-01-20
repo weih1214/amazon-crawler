@@ -21,6 +21,7 @@ public class NewRecordPipeline implements Pipeline {
   public void process(ResultItems resultItems, Task task) {
     try {
       final String source = filestorage.put(resultItems.get("Page url"), (String) resultItems.get("Page content"));
+      // Should comment this later
       System.out.println(source);
       resultItems.getAll().remove("Page content");
       resultItems.getAll().remove("Page url");

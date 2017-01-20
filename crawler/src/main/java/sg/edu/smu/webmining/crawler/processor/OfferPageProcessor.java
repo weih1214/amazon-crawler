@@ -14,12 +14,14 @@ import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,13 +46,19 @@ public class OfferPageProcessor implements PageProcessor {
     return null;
   }
 
-  public String getNextLink(Element paginationElement) {
-    final String s1 = paginationElement.className();
-    if (s1.contains("a-disabled")) {
-      return null;
-    } else {
-      return paginationElement.select("a").attr("href");
+  public String getNextLink(Document doc) {
+    final Elements offerElements = doc.select("ul.a-pagination li");
+    if (!offerElements.isEmpty()) {
+      final String s1 = offerElements.last().className();
+      if (s1.contains("a-disabled")) {
+        return null;
+      } else {
+        StringBuilder sb = new StringBuilder(doc.baseUri());
+        sb.append(offerElements.last().select("a").attr("href"));
+        return sb.toString();
+      }
     }
+    return null;
   }
 
   private boolean isFullList(Element fullListElement) {
@@ -69,18 +77,19 @@ public class OfferPageProcessor implements PageProcessor {
       return;
     }
     // Pagination Part
-//    final String nextLink = getNextLink(offerDoc.select("ul.a-pagination li").last());
-//    if (nextLink != null) {
-//      page.addTargetRequest(nextLink);
-//    }
+
+    final String nextLink = getNextLink(offerDoc);
+    if (nextLink != null) {
+      page.addTargetRequest(nextLink);
+    }
     final Elements offerElements = offerDoc.select("div#olpOfferList div.olpOffer");
     final String productId = extractProductId(page.getUrl().toString());
     for (Element element : offerElements) {
       final Offer offer = new Offer(productId, element);
       page.putField(RandomStringUtils.random(10, true, true), offer.asMap());
     }
-    page.putField("Page Content", page.getRawText());
-    page.putField("Page Url", page.getUrl().toString());
+    page.putField("Page content", page.getRawText());
+    page.putField("Page url", page.getUrl().toString());
   }
 
   @Override
@@ -88,9 +97,9 @@ public class OfferPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws SQLException {
 
-    final String testUrl = "https://www.amazon.com/gp/offer-listing/B003EM8008/ref=olp_page_1";
+    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "ProductPage", "content", "Offer Link").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -102,14 +111,14 @@ public class OfferPageProcessor implements PageProcessor {
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "OfferPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607", "D:\\Record")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\Offer")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new OfferPageProcessor())
                 .setDownloader(downloader)
                 .addPipeline(new NewRecordPipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
-                .addUrl(testUrl)
+                .addUrl(seedpageList)
                 .thread(5);
 
             long time = System.currentTimeMillis();

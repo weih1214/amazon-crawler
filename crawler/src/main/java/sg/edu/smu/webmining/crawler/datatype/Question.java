@@ -37,7 +37,6 @@ public class Question {
     this.questionId = questionId;
     this.answerLink = answerLink;
   }
-//    private final String questionId
 
   private String getQuestionId() {
     return questionId;

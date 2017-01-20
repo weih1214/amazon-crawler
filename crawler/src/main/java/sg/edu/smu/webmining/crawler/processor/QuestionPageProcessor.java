@@ -4,21 +4,23 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.databasemanager.MysqlRecordManager;
+import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.Question;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.RecordPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
 import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
+import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -79,11 +81,11 @@ public class QuestionPageProcessor implements PageProcessor {
       if (m.find()) {
         questionID = m.group(1);
       }
-      final Question question = new Question(questionID, questionElement);
+      final Question question = new Question(questionID, questionElement, pageURL);
       page.putField(questionID, question.asMap());
     }
-    page.putField("Page Content", page.getRawText());
-    page.putField("Page Url", page.getUrl().toString());
+    page.putField("Page content", page.getRawText());
+    page.putField("Page url", page.getUrl().toString());
   }
 
   @Override
@@ -91,8 +93,8 @@ public class QuestionPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) {
-    final String testUrl = "https://www.amazon.com/ask/questions/asin/B003EM8008/1/ref=ask_ql_psf_ql_hza?sort=HELPFUL&isAnswered=true";
+  public static void main(String[] args) throws SQLException {
+    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "ProductPage", "content", "Question Link").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -104,13 +106,14 @@ public class QuestionPageProcessor implements PageProcessor {
       provider.startAutoRefresh();
 
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "QuestionPage", "content")) {
-        try (final MysqlRecordManager mysqlManager = new MysqlRecordManager("jdbc:mysql://127.0.0.1:3306/play", "root", "nrff201607")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\Question")) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new QuestionPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new RecordPipeline(new GeneralMongoDBPipeline(mongoManager), mysqlManager))
-                .addUrl(testUrl)
+                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new GeneralMongoDBPipeline(mongoManager))
+                .addUrl(seedpageList)
                 .thread(5);
 
             long time = System.currentTimeMillis();

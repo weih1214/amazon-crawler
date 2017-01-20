@@ -1,6 +1,7 @@
 package sg.edu.smu.webmining.crawler.datatype;
 
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -105,6 +106,17 @@ public class Answer {
     return getVotes(2);
   }
 
+  public String getAnswerCommentLink() {
+    final Elements linkElements = answerElement.select("div.answerFooter a");
+    if (!linkElements.isEmpty()) {
+      final Element linkElement = linkElements.first();
+      if (linkElement.text().matches("(.*)")) {
+        return linkElement.attr("href");
+      }
+    }
+    return null;
+  }
+
   public Map<String, Object> asMap() {
     final Map<String, Object> answerDoc = new LinkedHashMap<>();
     answerDoc.put("Answer ID", getAnswerId());
@@ -116,6 +128,7 @@ public class Answer {
     answerDoc.put("Answer Text", getAnswerText());
     answerDoc.put("Positive Voters", getUpVotes());
     answerDoc.put("Total Voters", getTotalVotes());
+    answerDoc.put("Answer Comment Link", getAnswerCommentLink());
     return answerDoc;
   }
 }
