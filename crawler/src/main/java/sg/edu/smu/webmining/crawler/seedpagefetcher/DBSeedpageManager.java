@@ -35,7 +35,11 @@ public class DBSeedpageManager implements SeedpageManager {
   public String[] get() throws SQLException {
     final List<String> seedpageList = new ArrayList<>();
     for (Document doc: queryResult) {
-      seedpageList.add(doc.get(fieldName).toString());
+      if (doc.get(fieldName) == null) {
+        continue;
+      }
+      final String seedpage = doc.get(fieldName).toString();
+      seedpageList.add(seedpage);
     }
     String[] seedpage = new String[seedpageList.size()];
     seedpage = seedpageList.toArray(seedpage);
