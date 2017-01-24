@@ -3,6 +3,7 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.Review;
 import sg.edu.smu.webmining.crawler.datatype.ReviewOnPage;
@@ -21,6 +22,7 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,8 +127,10 @@ public class ReviewPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) throws SQLException {
-    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "ProductPage", "content", "Review Link").get();
+  public static void main(String[] args) throws SQLException, FileNotFoundException {
+
+    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Review Link").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -137,8 +141,8 @@ public class ReviewPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "ReviewPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\Review")) {
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new ReviewPageProcessor())

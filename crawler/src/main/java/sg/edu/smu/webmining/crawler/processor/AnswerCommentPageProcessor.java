@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.AnswerComment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
@@ -21,6 +22,7 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,8 +93,8 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     return null;
   }
 
-  public static Request[] getRequestArray() throws SQLException {
-    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "AnswerPage", "content", "Answer Comment Link").get();
+  public static Request[] getRequestArray(ConfigFetcher cf) throws SQLException {
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content", "Answer Comment Link").get();
     List<Request> requestList = new ArrayList <>();
     for (String s1: seedpageList) {
       requestList.add(new Request(s1).putExtra("Answer ID", getAnswerId(s1)));
@@ -102,11 +104,12 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     return requestArray;
   }
 
-  public static void main(String[] args) throws SQLException {
+  public static void main(String[] args) throws SQLException, FileNotFoundException {
 
 //    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
 //    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
-    final Request[] requestArray = getRequestArray();
+    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final Request[] requestArray = getRequestArray(cf);
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -117,8 +120,8 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     try {
       provider.startAutoRefresh();
 
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "AnswerCommentPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\AnswerComment")) {
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerCommentPage", "content")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new AnswerCommentPageProcessor())

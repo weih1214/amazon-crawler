@@ -3,6 +3,7 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
 import sg.edu.smu.webmining.crawler.databasemanager.MasterlistMongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.MasterlistMongoDBPipeline;
@@ -239,10 +240,11 @@ public class MasterListPageProcessor implements PageProcessor {
 
     try {
       provider.startAutoRefresh();
+      final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
 
-      try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager("localhost", 27017, "Masterlist", "content")) {
+      try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
-          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\masterlist")) {
+          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
 
             Spider spider = Spider.create(new MasterListPageProcessor())
                                   .setDownloader(downloader)

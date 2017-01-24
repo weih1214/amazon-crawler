@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.datatype.Question;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
@@ -20,6 +21,7 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,8 +95,10 @@ public class QuestionPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) throws SQLException {
-    final String[] seedpageList = new DBSeedpageManager("localhost", 27017, "ProductPage", "content", "Question Link").get();
+  public static void main(String[] args) throws SQLException, FileNotFoundException {
+
+    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Question Link").get();
 
     DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
         new DynamicProxyProvider()
@@ -105,8 +109,8 @@ public class QuestionPageProcessor implements PageProcessor {
     try {
       provider.startAutoRefresh();
 
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager("localhost", 27017, "QuestionPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager("jdbc:mysql://127.0.0.1:3306/record", "root", "nrff201607", "D:\\Question")) {
+      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "QuestionPage", "content")) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
 
             Spider spider = Spider.create(new QuestionPageProcessor())
