@@ -5,11 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.HtmlPipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
+import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderFactory;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
@@ -104,34 +100,20 @@ public class UrlListCrawler implements PageProcessor {
     final List<String> urls = readURLs(urlListFilename);
     final Pattern filenamePattern = Pattern.compile(filenameRegexp);
 
-    final DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-            .addSource(new InCloakSource())
-    );
+    try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(DynamicProxyProviderFactory.getDefault(), Sets.newHashSet(404, 410))) {
 
-    try {
-      provider.startAutoRefresh();
+      Spider spider = Spider.create(new UrlListCrawler(filenamePattern))
+          .setDownloader(downloader)
+          .addPipeline(new HtmlPipeline(outDir))
+          .thread(10);
 
-      try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider, Sets.newHashSet(404, 410))) {
-
-        Spider spider = Spider.create(new UrlListCrawler(filenamePattern))
-            .setDownloader(downloader)
-            .addPipeline(new HtmlPipeline(outDir))
-            .thread(10);
-
-        for (final String url : urls) {
-          spider.addUrl(url);
-        }
-
-        long time = System.currentTimeMillis();
-        spider.run();
-        System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
+      for (final String url : urls) {
+        spider.addUrl(url);
       }
 
-    } finally {
-      provider.stopAutoRefresh();
+      long time = System.currentTimeMillis();
+      spider.run();
+      System.out.println("Finished in " + ((System.currentTimeMillis() - time) / 60000) + "m");
     }
   }
 }

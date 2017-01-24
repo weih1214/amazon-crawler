@@ -1,4 +1,4 @@
-package sg.edu.smu.webmining.crawler.datatype;
+package sg.edu.smu.webmining.crawler.parse;
 
 import org.jsoup.nodes.Element;
 

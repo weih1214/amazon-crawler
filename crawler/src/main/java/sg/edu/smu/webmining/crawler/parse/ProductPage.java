@@ -1,4 +1,4 @@
-package sg.edu.smu.webmining.crawler.offlinework;
+package sg.edu.smu.webmining.crawler.parse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.nodes.Document;
@@ -253,9 +253,7 @@ public class ProductPage {
   }
 
   public String getQuestionLink() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("https://www.amazon.com/ask/questions/asin/").append(id).append("/ref=ask_dp_dpmw_ql_hza?isAnswered=true");
-    return sb.toString();
+    return "https://www.amazon.com/ask/questions/asin/" + id + "/ref=ask_dp_dpmw_ql_hza?isAnswered=true";
   }
 
   public String getReviewLink() {
@@ -275,7 +273,7 @@ public class ProductPage {
 
   public Integer getTotalReviews() {
     final String totalReviews = doc.select("span#acrCustomerReviewText").text();
-    if (totalReviews == null || totalReviews == "") {
+    if (totalReviews == null || totalReviews.isEmpty()) {
       return null;
     }
     final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalReviews);
@@ -290,7 +288,7 @@ public class ProductPage {
 
   public Integer getTotalQuestions() {
     final String totalQuestions = doc.select("a#askATFLink span.a-size-base").text();
-    if (totalQuestions == null || totalQuestions == "") {
+    if (totalQuestions == null || totalQuestions.isEmpty()) {
       // Log non-existence
       return null;
     }
@@ -305,7 +303,7 @@ public class ProductPage {
 
   public Integer getTotalOffers() {
     final String totalOffers = doc.select("div#olp_feature_div").text();
-    if (totalOffers == null || totalOffers == "") {
+    if (totalOffers == null || totalOffers.isEmpty()) {
       // Log non-existence
       return null;
     }

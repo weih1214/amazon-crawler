@@ -3,17 +3,12 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
+import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.MasterlistMongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.MasterlistMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
 import sg.edu.smu.webmining.crawler.pipeline.SeedpagePipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.InCloakSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
@@ -48,7 +43,6 @@ public class MasterListPageProcessor implements PageProcessor {
   private boolean isSearchStarted = false;
   private boolean isSeedPageVisited = false;
   private String seedPage = null;
-  private Integer total_number_products = 0;
 
   private Double maxPrice = null;
   private Double minPrice = null;
@@ -91,9 +85,8 @@ public class MasterListPageProcessor implements PageProcessor {
       page.addTargetRequest(seedPage + "&sort=price-asc-rank");
       page.addTargetRequest(seedPage + "&sort=price-desc-rank");
       isSeedPageVisited = true;
-      total_number_products = getNumItems(page);
       page.putField("seedpage", seedPage);
-      page.putField("total products", total_number_products);
+      page.putField("total products", getNumItems(page));
       page.putField("Page content", page.getRawText());
       page.putField("Page url", page.getUrl().toString());
       page.setSkip(false);
@@ -239,27 +232,19 @@ public class MasterListPageProcessor implements PageProcessor {
   }
 
   public static void main(String[] args) {
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-            .addSource(new InCloakSource())
-    );
-
     try {
-      provider.startAutoRefresh();
-      final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+      final Config cf = new Config("D:\\config.json");
 
       try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
-        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
-          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
+        try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
+          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
 
             Spider spider = Spider.create(new MasterListPageProcessor())
-                                  .setDownloader(downloader)
-                                  .addPipeline(new NewRecordPipeline(mysqlFileStorage))
-                                  .addPipeline(new SeedpagePipeline(mongoManager))
-                                  .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
-                                  .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
+                .setDownloader(downloader)
+                .addPipeline(new FileStoragePipeline(mysqlFileStorage))
+                .addPipeline(new SeedpagePipeline(mongoManager))
+                .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
+                .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
 
             long time = System.currentTimeMillis();
             spider.run();
@@ -271,8 +256,6 @@ public class MasterListPageProcessor implements PageProcessor {
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);
-    } finally {
-      provider.stopAutoRefresh();
     }
   }
 }

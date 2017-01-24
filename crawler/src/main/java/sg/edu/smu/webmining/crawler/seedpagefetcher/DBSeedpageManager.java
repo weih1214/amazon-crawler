@@ -7,7 +7,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Projections;
 import org.bson.Document;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,8 +21,7 @@ public class DBSeedpageManager implements SeedpageManager {
   private final FindIterable<Document> queryResult;
   private final String fieldName;
 
-
-  public DBSeedpageManager(String location, Integer port, String databaseName, String collectionName, String fieldName) {
+  public DBSeedpageManager(String location, int port, String databaseName, String collectionName, String fieldName) {
     mongoClient = new MongoClient(location, port);
     mongoDatabase = mongoClient.getDatabase(databaseName);
     mongoCollection = mongoDatabase.getCollection(collectionName);
@@ -32,19 +30,17 @@ public class DBSeedpageManager implements SeedpageManager {
   }
 
   @Override
-  public String[] get() throws SQLException {
+  public String[] get() {
     final List<String> seedpageList = new ArrayList<>();
-    for (Document doc: queryResult) {
+    for (final Document doc : queryResult) {
       if (doc.get(fieldName) == null) {
         continue;
       }
-      final String seedpage = doc.get(fieldName).toString();
+      final String seedpage = doc.getString(fieldName);
       System.out.println(seedpage);
       seedpageList.add(seedpage);
     }
-    String[] seedpage = new String[seedpageList.size()];
-    seedpage = seedpageList.toArray(seedpage);
     mongoClient.close();
-    return seedpage;
+    return seedpageList.toArray(new String[seedpageList.size()]);
   }
 }

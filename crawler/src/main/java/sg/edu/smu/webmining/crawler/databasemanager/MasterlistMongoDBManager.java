@@ -10,7 +10,8 @@ import java.util.Map;
 /**
  * Created by hwei on 18/1/2017.
  */
-public class MasterlistMongoDBManager implements AutoCloseable,MongoDBManager {
+public class MasterlistMongoDBManager implements AutoCloseable, MongoDBManager {
+
   private final MongoClient mongoClient;
   private final MongoDatabase mongoDatabase;
   private final MongoCollection<Document> mongoCollection;

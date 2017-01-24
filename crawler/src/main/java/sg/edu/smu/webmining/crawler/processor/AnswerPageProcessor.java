@@ -4,16 +4,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
+import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
-import sg.edu.smu.webmining.crawler.datatype.Answer;
+import sg.edu.smu.webmining.crawler.parse.Answer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
@@ -95,25 +91,17 @@ public class AnswerPageProcessor implements PageProcessor {
 
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
-    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final Config cf = new Config("D:\\config.json");
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "QuestionPage", "content", "Answer Link").get();
 
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-    );
-
     try {
-      provider.startAutoRefresh();
-
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content")) {
-          try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
-          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
             Spider spider = Spider.create(new AnswerPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
                 .thread(5);
@@ -128,8 +116,6 @@ public class AnswerPageProcessor implements PageProcessor {
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);
-    } finally {
-      provider.stopAutoRefresh();
     }
   }
 

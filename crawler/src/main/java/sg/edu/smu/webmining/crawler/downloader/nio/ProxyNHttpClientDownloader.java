@@ -17,6 +17,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderFactory;
 import sg.edu.smu.webmining.crawler.proxy.ProxyProvider;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Request;
@@ -53,6 +54,10 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
   private final ProxyProvider proxyProvider;
 
   private final Set<Integer> stopStatusCodes;
+
+  public ProxyNHttpClientDownloader() {
+    this(DynamicProxyProviderFactory.getDefault());
+  }
 
   public ProxyNHttpClientDownloader(ProxyProvider proxyProvider) {
     this(proxyProvider, Collections.emptySet());

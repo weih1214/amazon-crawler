@@ -1,4 +1,4 @@
-package sg.edu.smu.webmining.crawler.datatype;
+package sg.edu.smu.webmining.crawler.parse;
 
 import java.text.DateFormat;
 import java.text.ParseException;

@@ -1,16 +1,12 @@
 package sg.edu.smu.webmining.crawler.processor;
 
 import org.jsoup.Jsoup;
-import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
+import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
-import sg.edu.smu.webmining.crawler.offlinework.ProductPage;
+import sg.edu.smu.webmining.crawler.parse.ProductPage;
+import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
@@ -44,7 +40,7 @@ public class ProductPageProcessor implements PageProcessor {
       page.putField(productId, content.asMap());
       page.putField("Page content", page.getRawText());
       page.putField("Page url", page.getUrl().toString());
-    }else {
+    } else {
       page.setSkip(true);
     }
 
@@ -57,26 +53,17 @@ public class ProductPageProcessor implements PageProcessor {
 
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
-    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final Config cf = new Config("D:\\config.json");
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", "Url").get();
 
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-    );
-
     try {
-      provider.startAutoRefresh();
-
-
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
-          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
             Spider spider = Spider.create(new ProductPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
                 .thread(5);
@@ -91,8 +78,6 @@ public class ProductPageProcessor implements PageProcessor {
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);
-    } finally {
-      provider.stopAutoRefresh();
     }
   }
 }

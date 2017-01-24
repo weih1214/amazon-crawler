@@ -5,16 +5,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
+import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
-import sg.edu.smu.webmining.crawler.datatype.Offer;
+import sg.edu.smu.webmining.crawler.parse.Offer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
@@ -55,9 +51,7 @@ public class OfferPageProcessor implements PageProcessor {
       if (s1.contains("a-disabled")) {
         return null;
       } else {
-        StringBuilder sb = new StringBuilder(doc.baseUri());
-        sb.append(offerElements.last().select("a").attr("href"));
-        return sb.toString();
+        return doc.baseUri() + offerElements.last().select("a").attr("href");
       }
     }
     return null;
@@ -101,25 +95,17 @@ public class OfferPageProcessor implements PageProcessor {
 
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
-    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final Config cf = new Config("D:\\config.json");
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Offer Link").get();
 
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-    );
-
     try {
-      provider.startAutoRefresh();
-
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "OfferPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
-          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
             Spider spider = Spider.create(new OfferPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
                 .thread(5);
@@ -133,8 +119,6 @@ public class OfferPageProcessor implements PageProcessor {
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);
-    } finally {
-      provider.stopAutoRefresh();
     }
   }
 }

@@ -1,4 +1,4 @@
-package sg.edu.smu.webmining.crawler.offlinework;
+package sg.edu.smu.webmining.crawler.parse;
 
 import org.jsoup.nodes.Element;
 

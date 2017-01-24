@@ -4,16 +4,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sg.edu.smu.webmining.crawler.Config.ConfigFetcher;
+import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
-import sg.edu.smu.webmining.crawler.datatype.AnswerComment;
+import sg.edu.smu.webmining.crawler.parse.AnswerComment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
-import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
-import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
-import sg.edu.smu.webmining.crawler.proxy.source.SSLProxiesOrgSource;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
@@ -32,7 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hwei on 15/12/2016.
  */
-public class AnswerCommentPageProcessor implements PageProcessor{
+public class AnswerCommentPageProcessor implements PageProcessor {
 
   private static final Pattern QUESTION_ID_PATTERN = Pattern.compile("/(T[a-zA-Z0-9]+)/");
   private static final Pattern ANSWER_ID_PATTERN = Pattern.compile("Anchor=(Mx[0-9A-Z]{13,14})");
@@ -65,14 +61,14 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
     final String nextLink = getNextLink(doc.select("div.cdPageSelectorPagination a"));
     final String answerId = page.getRequest().getExtra("Answer ID").toString();
-    if(nextLink != null) {
+    if (nextLink != null) {
       Request request = new Request(nextLink).putExtra("Answer ID", answerId);
       page.addTargetRequest(request);
     }
     final Elements answerCommentElements = doc.select("div.cdCommentList div.cdComment");
     final String answerText = doc.select("span#long_cdAnswerDisplay").text().trim();
     final String questionId = getQuestionId(doc.select("span.cdQuestionLink a").attr("href"));
-    for (Element element: answerCommentElements) {
+    for (Element element : answerCommentElements) {
       final AnswerComment ansComment = new AnswerComment(element, questionId, answerId, answerText);
       page.putField(ansComment.getAnswerCommentId(), ansComment.asMap());
     }
@@ -87,16 +83,16 @@ public class AnswerCommentPageProcessor implements PageProcessor{
 
   public static String getAnswerId(String testUrl) {
     final Matcher m = ANSWER_ID_PATTERN.matcher(testUrl);
-    if (m.find()){
+    if (m.find()) {
       return m.group(1);
     }
     return null;
   }
 
-  public static Request[] getRequestArray(ConfigFetcher cf) throws SQLException {
+  public static Request[] getRequestArray(Config cf) throws SQLException {
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content", "Answer Comment Link").get();
-    List<Request> requestList = new ArrayList <>();
-    for (String s1: seedpageList) {
+    List<Request> requestList = new ArrayList<>();
+    for (String s1 : seedpageList) {
       requestList.add(new Request(s1).putExtra("Answer ID", getAnswerId(s1)));
     }
     Request[] requestArray = new Request[requestList.size()];
@@ -108,25 +104,17 @@ public class AnswerCommentPageProcessor implements PageProcessor{
 
 //    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
 //    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
-    final ConfigFetcher cf = new ConfigFetcher("D:\\config.json");
+    final Config cf = new Config("D:\\config.json");
     final Request[] requestArray = getRequestArray(cf);
 
-    DynamicProxyProviderTimerWrap provider = new DynamicProxyProviderTimerWrap(
-        new DynamicProxyProvider()
-            .addSource(new FPLNetSource())
-            .addSource(new SSLProxiesOrgSource())
-    );
-
     try {
-      provider.startAutoRefresh();
-
       try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerCommentPage", "content")) {
-        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStoragedir())) {
-          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader(provider)) {
+        try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
+          try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
             Spider spider = Spider.create(new AnswerCommentPageProcessor())
                 .setDownloader(downloader)
-                .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addRequest(requestArray)
                 .thread(5);
@@ -141,8 +129,6 @@ public class AnswerCommentPageProcessor implements PageProcessor{
     } catch (Throwable ex) {
       System.err.println("Uncaught exception - " + ex.getMessage());
       ex.printStackTrace(System.err);
-    } finally {
-      provider.stopAutoRefresh();
     }
   }
 
