@@ -36,4 +36,9 @@ public class GeneralMongoDBManager implements AutoCloseable, MongoDBManager {
   @Override
   public void update(String productId, String url, String Source) throws Exception {}
 
+  @Override
+  public void update(String seedpage, Integer totalProducts) throws Exception {
+
+  }
+
 }

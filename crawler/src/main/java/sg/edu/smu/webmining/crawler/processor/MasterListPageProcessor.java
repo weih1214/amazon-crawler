@@ -8,6 +8,7 @@ import sg.edu.smu.webmining.crawler.databasemanager.MasterlistMongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.MasterlistMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.pipeline.NewRecordPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.SeedpagePipeline;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProvider;
 import sg.edu.smu.webmining.crawler.proxy.DynamicProxyProviderTimerWrap;
 import sg.edu.smu.webmining.crawler.proxy.source.FPLNetSource;
@@ -47,6 +48,7 @@ public class MasterListPageProcessor implements PageProcessor {
   private boolean isSearchStarted = false;
   private boolean isSeedPageVisited = false;
   private String seedPage = null;
+  private Integer total_number_products = 0;
 
   private Double maxPrice = null;
   private Double minPrice = null;
@@ -88,8 +90,13 @@ public class MasterListPageProcessor implements PageProcessor {
       seedPage = page.getUrl().toString();
       page.addTargetRequest(seedPage + "&sort=price-asc-rank");
       page.addTargetRequest(seedPage + "&sort=price-desc-rank");
-      page.setSkip(true);
       isSeedPageVisited = true;
+      total_number_products = getNumItems(page);
+      page.putField("seedpage", seedPage);
+      page.putField("total products", total_number_products);
+      page.putField("Page content", page.getRawText());
+      page.putField("Page url", page.getUrl().toString());
+      page.setSkip(false);
       logger.info("seed page is visited");
     }
   }
@@ -176,9 +183,6 @@ public class MasterListPageProcessor implements PageProcessor {
     if (!isSearchStarted) {
 
       // store seedpage & addtarget(descending & ascending)
-      if (!isSeedPageVisited) {
-        visitSeedPage(page);
-      }
 
       if (minPrice == null || maxPrice == null) {
         extractPriceRange(page);
@@ -189,6 +193,10 @@ public class MasterListPageProcessor implements PageProcessor {
         page.addTargetRequest(url);
         isSearchStarted = true;
         logger.info("search started");
+      }
+
+      if (!isSeedPageVisited) {
+        visitSeedPage(page);
       }
 
     } else {
@@ -249,6 +257,7 @@ public class MasterListPageProcessor implements PageProcessor {
             Spider spider = Spider.create(new MasterListPageProcessor())
                                   .setDownloader(downloader)
                                   .addPipeline(new NewRecordPipeline(mysqlFileStorage))
+                                  .addPipeline(new SeedpagePipeline(mongoManager))
                                   .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
                                   .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
 
