@@ -39,6 +39,7 @@ public class DBSeedpageManager implements SeedpageManager {
         continue;
       }
       final String seedpage = doc.get(fieldName).toString();
+      System.out.println(seedpage);
       seedpageList.add(seedpage);
     }
     String[] seedpage = new String[seedpageList.size()];

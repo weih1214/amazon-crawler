@@ -19,7 +19,9 @@ public class ProductPage {
 
   private final Document doc;
   private final String id;
-
+  private final static Pattern REVIEWS_NUMBER_PATTERN = Pattern.compile("[\\d\\,]*");
+  private final static Pattern QUESTION_NUMBER_PATTERN = Pattern.compile("\\d+");
+  private final static Pattern OFFER_NUMBER_PATTERN = Pattern.compile("\\((\\d+)\\)");
   public ProductPage(Document doc, String id) {
 
     this.doc = doc;
@@ -269,8 +271,50 @@ public class ProductPage {
     }
     sb.append(reviewLink);
     return sb.toString();
+  }
 
+  public Integer getTotalReviews() {
+    final String totalReviews = doc.select("span#acrCustomerReviewText").text();
+    if (totalReviews == null || totalReviews == "") {
+      return null;
+    }
+    final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalReviews);
+    if (m.find()) {
+      return Integer.parseInt(m.group(0).replace(",", ""));
+    } else {
+      // Log failure to regex
+      return null;
+    }
 
+  }
+
+  public Integer getTotalQuestions() {
+    final String totalQuestions = doc.select("a#askATFLink span.a-size-base").text();
+    if (totalQuestions == null || totalQuestions == "") {
+      // Log non-existence
+      return null;
+    }
+    final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalQuestions);
+    if (m.find()) {
+      return Integer.parseInt(m.group(0));
+    }
+    // Log failure to regex
+    return null;
+
+  }
+
+  public Integer getTotalOffers() {
+    final String totalOffers = doc.select("div#olp_feature_div").text();
+    if (totalOffers == null || totalOffers == "") {
+      // Log non-existence
+      return null;
+    }
+    final Matcher m = OFFER_NUMBER_PATTERN.matcher(totalOffers);
+    if (m.find()) {
+      return Integer.parseInt(m.group(1));
+    }
+    // Log failure to regex
+    return null;
   }
 
   public Map<String, Object> asMap(){
@@ -298,6 +342,9 @@ public class ProductPage {
     productMap.put("Offer Link", getOffterLink());
     productMap.put("Question Link", getQuestionLink());
     productMap.put("Review Link", getReviewLink());
+    productMap.put("Total Reviews", getTotalReviews());
+    productMap.put("Total Questions", getTotalQuestions());
+    productMap.put("Total Offers", getTotalOffers());
     return productMap;
   }
 

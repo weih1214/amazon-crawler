@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 public class CommentPageProcessor implements PageProcessor {
 
   private static final Pattern REVIEW_ID_PATTERN = Pattern.compile("(?:/review|/customer-reviews)/([a-zA-Z0-9]+)/");
+  private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -58,6 +59,20 @@ public class CommentPageProcessor implements PageProcessor {
     return null;
   }
 
+  public String getTotalComments(Document doc){
+    final String totalComments = doc.select("div.fosmall div.cdPageInfo").text();
+    if (totalComments == null || totalComments == "") {
+      // Log failure to parse
+      return null;
+    }
+    final Matcher m = COMMENT_NUMBER_PATTERN.matcher(totalComments);
+    if (m.find()) {
+      return m.group(1);
+    }
+    // Log failure to regex
+    return null;
+  }
+
   @Override
   public void process(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com");
@@ -66,8 +81,6 @@ public class CommentPageProcessor implements PageProcessor {
     if (nextURL != null) {
       page.addTargetRequest(nextURL);
     }
-    System.out.println(url);
-    System.out.println(nextURL);
     for (Element e : doc.select("div.postBody")) {
       final String reviewId = parseReviewIdFromURL(url);
       final Comment comment = new Comment(reviewId, e);
