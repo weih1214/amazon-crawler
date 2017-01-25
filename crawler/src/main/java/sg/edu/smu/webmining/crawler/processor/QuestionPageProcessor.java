@@ -32,6 +32,7 @@ public class QuestionPageProcessor implements PageProcessor {
   private static final Pattern QUESTION_ID_PATTERN = Pattern.compile("/-/([a-zA-Z0-9]+)/");
   private static final Pattern CATEGORY_URL_PATTERN = Pattern.compile("/ask/questions/");
   private static final Pattern QUESTION_URL_PATTERN = Pattern.compile("/forum/");
+  private static final Pattern ANSWER_NUMBER_PATTERN = Pattern.compile("(\\d+) answers");
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -63,6 +64,19 @@ public class QuestionPageProcessor implements PageProcessor {
     return QUESTION_URL_PATTERN.matcher(pageURL).find();
   }
 
+  private Integer getTotalAnswers(Document doc) {
+    final String totalAnswers = doc.select("div.fosmall div.cdPageInfo").text();
+    if (totalAnswers == null || totalAnswers.isEmpty()) {
+      // Log failure to parse
+      return null;
+    }
+    final Matcher m = ANSWER_NUMBER_PATTERN.matcher(totalAnswers);
+    if (m.find()) {
+      return Integer.parseInt(m.group(1));
+    }
+    // Log failure to regex
+    return null;
+  }
 
   @Override
   public void process(Page page) {
@@ -79,7 +93,8 @@ public class QuestionPageProcessor implements PageProcessor {
       if (m.find()) {
         questionID = m.group(1);
       }
-      final Question question = new Question(questionID, questionElement, pageURL);
+      final Integer totalAnswers = getTotalAnswers(doc);
+      final Question question = new Question(questionID, questionElement, pageURL, totalAnswers);
       page.putField(questionID, question.asMap());
     }
     page.putField("Page content", page.getRawText());

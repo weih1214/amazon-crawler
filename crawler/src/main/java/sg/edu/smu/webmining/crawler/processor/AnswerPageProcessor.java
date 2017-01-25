@@ -58,8 +58,14 @@ public class AnswerPageProcessor implements PageProcessor {
     return null;
   }
 
-  private String getNextLink(Element e) {
-    return e.children().last().attr("href");
+  private String getNextLink(Document doc) {
+
+    final Elements paginationElements = doc.select("div.cdPageSelectorPagination");
+    if (paginationElements.isEmpty()) {
+      return null;
+    } else {
+      return paginationElements.first().children().last().attr("href");
+    }
   }
 
   @Override
@@ -77,8 +83,8 @@ public class AnswerPageProcessor implements PageProcessor {
     page.putField("Page content", page.getRawText());
     page.putField("Page url", page.getUrl().toString());
     // Pagination
-    final String nextLink = doc.select("div.cdPageSelectorPagination").first().children().last().attr("href");
-    if (!nextLink.isEmpty()) {
+    final String nextLink = getNextLink(doc);
+    if (nextLink != null && !nextLink.isEmpty()) {
       page.addTargetRequest(nextLink);
     }
 

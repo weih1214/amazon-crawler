@@ -31,11 +31,13 @@ public class Question {
   private final Element questionElement;
   private final String questionId;
   private final String answerLink;
+  private final Integer totalAnswers;
 
-  public Question(String questionId, Element questionElement, String answerLink) {
+  public Question(String questionId, Element questionElement, String answerLink, Integer totalAnswers) {
     this.questionElement = questionElement;
     this.questionId = questionId;
     this.answerLink = answerLink;
+    this.totalAnswers = totalAnswers;
   }
 
   private String getQuestionId() {
@@ -84,6 +86,10 @@ public class Question {
 
   private String getAnswerLink() { return answerLink;}
 
+  private Integer getTotalAnswers() {
+    return totalAnswers;
+  }
+
   public Map<String, Object> asMap() {
     final Map<String, Object> questionDoc = new LinkedHashMap<>();
     questionDoc.put("Question ID", getQuestionId());
@@ -93,6 +99,7 @@ public class Question {
     questionDoc.put("Product ID", getProductId());
     questionDoc.put("Question Text", getQuestionText());
     questionDoc.put("Answer Link", getAnswerLink());
+    questionDoc.put("Total Answers", getTotalAnswers());
     return questionDoc;
   }
 }

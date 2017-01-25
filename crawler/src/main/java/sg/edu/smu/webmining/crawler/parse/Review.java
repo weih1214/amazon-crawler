@@ -50,6 +50,8 @@ public abstract class Review {
 
   public abstract String getCommentLink();
 
+  public abstract Integer getTotalComments();
+
   protected final String parseAuthorIdFromUrl(String url) {
     final Matcher m = AUTHOR_ID_PATTERN.matcher(url);
     if (m.find()) {
@@ -67,7 +69,6 @@ public abstract class Review {
   }
 
 
-
   public Map<String, Object> asMap() {
     final Map<String, Object> reviewDoc = new LinkedHashMap<>();
     reviewDoc.put("Product ID", getProductId());
@@ -83,6 +84,7 @@ public abstract class Review {
     reviewDoc.put("Review Rating", getRating());
     reviewDoc.put("Review Content", getContent());
     reviewDoc.put("Comment Link", getCommentLink());
+    reviewDoc.put("Total Comments", getTotalComments());
     return reviewDoc;
   }
 

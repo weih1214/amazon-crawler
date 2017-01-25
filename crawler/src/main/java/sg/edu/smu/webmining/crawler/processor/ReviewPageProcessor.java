@@ -28,6 +28,7 @@ public class ReviewPageProcessor implements PageProcessor {
   private static final Pattern URL_PRODUCT_ID_PATTERN1 = Pattern.compile("/product-reviews/(.*?)/");
   private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
   private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
+  private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -60,23 +61,40 @@ public class ReviewPageProcessor implements PageProcessor {
     return new ReviewOnPage(parseProductIdFromListPage(page), e);
   }
 
+  private Integer getTotalComments(Page page) {
+    final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
+    final String totalComments = doc.select("div.fosmall div.cdPageInfo").text();
+    if (totalComments == null || totalComments.isEmpty()) {
+      // Log failure to parse
+      return null;
+    }
+    final Matcher m = COMMENT_NUMBER_PATTERN.matcher(totalComments);
+    if (m.find()) {
+      return Integer.parseInt(m.group(1));
+    }
+    // Log failure to regex
+    return null;
+  }
+
   private Review parseCustomerReview(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
     final String productId = parseProductIdFromCustomerPage(page);
     final String reviewId = parseReviewId(page);
-    return new ReviewPage(reviewId, productId, doc, page.getUrl().toString());
+    final Integer totalComments = getTotalComments(page);
+    return new ReviewPage(reviewId, productId, doc, page.getUrl().toString(), totalComments);
   }
 
   private void parseProductReviews(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
     for (Element e : doc.select("#cm_cr-review_list div.a-section.review")) {
-      final String commentNo = e.select("span.review-comment-total.aok-hidden").text().trim();
-      final String helpfulVotes = e.select("span.review-votes").text().trim();
+      String commentNo = e.select("span.review-comment-total.aok-hidden").text();
+      if (commentNo == null || commentNo.isEmpty()) commentNo = "0";
+      String helpfulVotes = e.select("span.review-votes").text();
+      if (helpfulVotes == null || helpfulVotes.isEmpty()) helpfulVotes = "No";
       if ((Integer.parseInt(commentNo) != 0) || helpfulVotes.contains("found this helpful")) {
         final String reviewUrl = e.select("a.a-size-base.a-link-normal.review-title.a-color-base.a-text-bold").attr("href");
         if (!reviewUrl.isEmpty()) {
           // TODO: logger
-          //System.out.println(reviewUrl);
           page.addTargetRequest(reviewUrl);
         }
       } else {
@@ -91,7 +109,7 @@ public class ReviewPageProcessor implements PageProcessor {
     if (url.contains("product-reviews")) {
       parseProductReviews(page);
       final String nextLink = page.getHtml().css("#cm_cr-pagination_bar .a-pagination li.a-last a").links().toString();
-      if (!nextLink.isEmpty()) {
+      if (nextLink != null && !nextLink.isEmpty()) {
         page.addTargetRequest(nextLink);
       }
     } else if (url.contains("customer-reviews")) {

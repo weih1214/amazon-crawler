@@ -116,10 +116,13 @@ public class Answer {
     return null;
   }
 
-  public Integer getTotalComments() {
+  public Integer getTotalAnswerComments() {
     final Elements linkElements = answerElement.select("div.answerFooter a");
     if (!linkElements.isEmpty()) {
       final String totalAnswerComments = linkElements.first().text();
+      if (totalAnswerComments == null || totalAnswerComments.isEmpty()) {
+        return null;
+      }
       final Matcher m = ANSWERCOMMENT_NUMBER_PATTERN.matcher(totalAnswerComments);
       if (m.find()) {
         return Integer.parseInt(m.group(1));
@@ -143,7 +146,7 @@ public class Answer {
     answerDoc.put("Positive Voters", getUpVotes());
     answerDoc.put("Total Voters", getTotalVotes());
     answerDoc.put("Answer Comment Link", getAnswerCommentLink());
-    answerDoc.put("Total Answer Comments", getTotalComments());
+    answerDoc.put("Total Answer Comments", getTotalAnswerComments());
     return answerDoc;
   }
 }

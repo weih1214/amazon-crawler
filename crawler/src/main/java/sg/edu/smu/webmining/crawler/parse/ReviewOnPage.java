@@ -17,17 +17,17 @@ public class ReviewOnPage extends Review {
 
   @Override
   public String getTitle() {
-    return e.select("a[data-hook=review-title]").text().trim();
+    return e.select("a[data-hook=review-title]").text();
   }
 
   @Override
   public String getId() {
-    return e.attr("id").trim();
+    return e.attr("id");
   }
 
   @Override
   public String getAuthorName() {
-    return e.getElementsByAttributeValue("data-hook", "review-author").text().trim();
+    return e.getElementsByAttributeValue("data-hook", "review-author").text();
   }
 
   @Override
@@ -37,7 +37,9 @@ public class ReviewOnPage extends Review {
 
   @Override
   public String getDateString() {
-    return e.select("span[data-hook= review-date]").text().substring(3).replace(",", "");
+    final String data = e.select("span[data-hook= review-date]").text();
+    if (data == null || data.isEmpty()) return null;
+    return data.substring(3).replace(",", "");
   }
 
   @Override
@@ -53,7 +55,7 @@ public class ReviewOnPage extends Review {
 
   @Override
   public Double getRating() {
-    final String ratingString = e.select("i[data-hook = review-star-rating]").text().trim();
+    final String ratingString = e.select("i[data-hook = review-star-rating]").text();
     if (!ratingString.isEmpty()) {
       return Double.parseDouble(ratingString.substring(0, 3));
     }
@@ -82,6 +84,11 @@ public class ReviewOnPage extends Review {
 
   @Override
   public String getCommentLink() {
+    return null;
+  }
+
+  @Override
+  public Integer getTotalComments() {
     return null;
   }
 

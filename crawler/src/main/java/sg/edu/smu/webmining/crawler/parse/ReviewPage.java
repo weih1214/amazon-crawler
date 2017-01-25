@@ -16,12 +16,14 @@ public class ReviewPage extends Review {
   private final String productId;
   private final String commentLink;
   private final Element doc;
+  private final Integer totalComments;
 
-  public ReviewPage(String reviewId, String productId, Element reviewPage, String commentLink) {
+  public ReviewPage(String reviewId, String productId, Element reviewPage, String commentLink, Integer totalComments) {
     this.reviewId = reviewId;
     this.productId = productId;
     this.commentLink = commentLink;
     doc = reviewPage;
+    this.totalComments = totalComments;
   }
 
   @Override
@@ -104,4 +106,5 @@ public class ReviewPage extends Review {
     return productId;
   }
 
+  public Integer getTotalComments() { return totalComments;}
 }
