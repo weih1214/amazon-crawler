@@ -35,7 +35,7 @@ public class QuestionPageProcessor implements PageProcessor {
   private static final Pattern ANSWER_NUMBER_PATTERN = Pattern.compile("(\\d+) answers");
 
   private final Site site = Site.me()
-      .setCycleRetryTimes(Integer.MAX_VALUE)
+      .setCycleRetryTimes(30)
       .setSleepTime(1000)
       .setRetryTimes(3)
       .setCharset("UTF-8");

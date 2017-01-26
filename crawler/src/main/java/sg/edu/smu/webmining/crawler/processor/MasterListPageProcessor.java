@@ -35,7 +35,7 @@ public class MasterListPageProcessor implements PageProcessor {
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final Site site = Site.me()
-      .setCycleRetryTimes(Integer.MAX_VALUE)
+      .setCycleRetryTimes(30)
       .setSleepTime(1000)
       .setRetryTimes(3)
       .setCharset("UTF-8");

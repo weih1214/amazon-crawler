@@ -28,7 +28,7 @@ public class ProductPageProcessor implements PageProcessor {
       .setRetryTimes(5)
       .setSleepTime(5000)
       .setCharset("UTF-8")
-      .setCycleRetryTimes(50);
+      .setCycleRetryTimes(30);
 
   @Override
   public void process(Page page) {

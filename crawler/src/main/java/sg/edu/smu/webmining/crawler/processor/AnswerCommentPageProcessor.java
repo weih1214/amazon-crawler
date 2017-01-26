@@ -34,7 +34,7 @@ public class AnswerCommentPageProcessor implements PageProcessor {
   private static final Pattern ANSWER_ID_PATTERN = Pattern.compile("Anchor=(Mx[0-9A-Z]{13,14})");
 
   private final Site site = Site.me()
-      .setCycleRetryTimes(Integer.MAX_VALUE)
+      .setCycleRetryTimes(30)
       .setSleepTime(1000)
       .setRetryTimes(3)
       .setCharset("UTF-8");
