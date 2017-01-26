@@ -22,7 +22,6 @@ public class JsoupParseUtils {
     return null;
   }
 
-
   private JsoupParseUtils() {
     throw new UnsupportedOperationException();
   }

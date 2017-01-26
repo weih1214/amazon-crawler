@@ -2,6 +2,8 @@ package sg.edu.smu.webmining.crawler.parse;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -22,7 +24,7 @@ public class Answer {
   private static final Pattern ANSWERER_ID_PATTERN = Pattern.compile("/profile/([a-zA-Z0-9]+)/");
   private static final Pattern DATE_PATTERN = Pattern.compile(" on (.*)");
   private static final Pattern HELPFUL_PATTERN = Pattern.compile("(.*) of (.*) found");
-  private static final Pattern ANSWERCOMMENT_NUMBER_PATTERN = Pattern.compile("\\((\\d+)\\)");
+  private static final Pattern ANSWER_COMMENT_NUMBER_PATTERN = Pattern.compile("\\((\\d+)\\)");
 
   private static final DateFormat DATE_FORMAT;
 
@@ -30,6 +32,8 @@ public class Answer {
     DATE_FORMAT = new SimpleDateFormat("MMMM d yyyy");
     DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("PDT"));
   }
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final String questionId;
   private final String productId;
@@ -123,14 +127,14 @@ public class Answer {
       if (totalAnswerComments == null || totalAnswerComments.isEmpty()) {
         return null;
       }
-      final Matcher m = ANSWERCOMMENT_NUMBER_PATTERN.matcher(totalAnswerComments);
+      final Matcher m = ANSWER_COMMENT_NUMBER_PATTERN.matcher(totalAnswerComments);
       if (m.find()) {
         return Integer.parseInt(m.group(1));
       }
-      // Log failure to regex
+      logger.debug("fail to parse totalAnswerComments");
       return null;
     }
-    // Log failure to parse
+    logger.debug("fail to find totalAnswerComments element");
     return null;
   }
 

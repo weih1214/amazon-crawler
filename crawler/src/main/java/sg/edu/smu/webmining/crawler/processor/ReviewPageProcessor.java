@@ -3,6 +3,8 @@ package sg.edu.smu.webmining.crawler.processor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
 import sg.edu.smu.webmining.crawler.parse.Review;
@@ -29,6 +31,8 @@ public class ReviewPageProcessor implements PageProcessor {
   private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
   private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
   private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final Site site = Site.me()
       .setCycleRetryTimes(Integer.MAX_VALUE)
@@ -94,7 +98,7 @@ public class ReviewPageProcessor implements PageProcessor {
       if ((Integer.parseInt(commentNo) != 0) || helpfulVotes.contains("found this helpful")) {
         final String reviewUrl = e.select("a.a-size-base.a-link-normal.review-title.a-color-base.a-text-bold").attr("href");
         if (!reviewUrl.isEmpty()) {
-          // TODO: logger
+          logger.debug("reviewUrl is not found");
           page.addTargetRequest(reviewUrl);
         }
       } else {

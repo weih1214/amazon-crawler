@@ -81,8 +81,7 @@ public class OfferPageProcessor implements PageProcessor {
     final Elements offerElements = offerDoc.select("div#olpOfferList div.olpOffer");
     final String productId = extractProductId(page.getUrl().toString());
     for (Element element : offerElements) {
-      final Offer offer = new Offer(productId, element);
-      page.putField(RandomStringUtils.random(10, true, true), offer.asMap());
+      page.putField(RandomStringUtils.random(10, true, true), new Offer(element).asMap());
     }
     page.putField("Page content", page.getRawText());
     page.putField("Page url", page.getUrl().toString());

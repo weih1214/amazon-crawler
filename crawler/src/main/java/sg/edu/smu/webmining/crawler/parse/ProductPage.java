@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -17,13 +19,15 @@ import java.util.stream.Collectors;
  */
 public class ProductPage {
 
-  private final Document doc;
-  private final String id;
-  private final static Pattern REVIEWS_NUMBER_PATTERN = Pattern.compile("[\\d\\,]*");
   private final static Pattern QUESTION_NUMBER_PATTERN = Pattern.compile("\\d+");
   private final static Pattern OFFER_NUMBER_PATTERN = Pattern.compile("\\((\\d+)\\)");
-  public ProductPage(Document doc, String id) {
 
+  private final Logger logger = LoggerFactory.getLogger(getClass());
+
+  private final Document doc;
+  private final String id;
+
+  public ProductPage(Document doc, String id) {
     this.doc = doc;
     this.id = id;
   }
@@ -279,24 +283,22 @@ public class ProductPage {
     final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalReviews);
     if (m.find()) {
       return Integer.parseInt(m.group(0).replace(",", ""));
-    } else {
-      // Log failure to regex
-      return null;
     }
-
+    logger.debug("fail to parse totalReviews");
+    return null;
   }
 
   public Integer getTotalQuestions() {
     final String totalQuestions = doc.select("a#askATFLink span.a-size-base").text();
     if (totalQuestions == null || totalQuestions.isEmpty()) {
-      // Log non-existence
+      logger.debug("fail to find totalQuestions");
       return null;
     }
     final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalQuestions);
     if (m.find()) {
       return Integer.parseInt(m.group(0));
     }
-    // Log failure to regex
+    logger.debug("fail to parse totalQuestions");
     return null;
 
   }
@@ -304,14 +306,14 @@ public class ProductPage {
   public Integer getTotalOffers() {
     final String totalOffers = doc.select("div#olp_feature_div").text();
     if (totalOffers == null || totalOffers.isEmpty()) {
-      // Log non-existence
+      logger.debug("fail to find totalOffers");
       return null;
     }
     final Matcher m = OFFER_NUMBER_PATTERN.matcher(totalOffers);
     if (m.find()) {
       return Integer.parseInt(m.group(1));
     }
-    // Log failure to regex
+    logger.debug("fail to parse totalOffers");
     return null;
   }
 
@@ -345,6 +347,5 @@ public class ProductPage {
     productMap.put("Total Offers", getTotalOffers());
     return productMap;
   }
-
 
 }

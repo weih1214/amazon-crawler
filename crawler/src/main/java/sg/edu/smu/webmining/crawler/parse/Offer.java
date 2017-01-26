@@ -19,12 +19,9 @@ public class Offer {
   private static final Pattern TOTAL_RATINGS_PATTERN = Pattern.compile("\\(([\\d,]+?) total ratings\\)");
   private static final Pattern RECORD_PERIOD_PATTERN = Pattern.compile("over the past (\\d\\d?) months");
 
-
-  private final String productId;
   private final Element offerElement;
 
-  public Offer(String productId, Element offerElement) {
-    this.productId = productId;
+  public Offer(Element offerElement) {
     this.offerElement = offerElement;
   }
 
