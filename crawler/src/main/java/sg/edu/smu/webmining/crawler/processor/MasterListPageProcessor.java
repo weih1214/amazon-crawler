@@ -233,7 +233,7 @@ public class MasterListPageProcessor implements PageProcessor {
 
   public static void main(String[] args) {
     try {
-      final Config cf = new Config("D:\\config.json");
+      final Config cf = new Config(args[0]);
 
       try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
@@ -244,7 +244,7 @@ public class MasterListPageProcessor implements PageProcessor {
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new SeedpagePipeline(mongoManager))
                 .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
-                .addUrl("https://www.amazon.com/b/ref=lp_172541_ln_0?node=12097478011&ie=UTF8&qid=1476152128").thread(5);
+                .addUrl(args[1]).thread(5);
 
             long time = System.currentTimeMillis();
             spider.run();

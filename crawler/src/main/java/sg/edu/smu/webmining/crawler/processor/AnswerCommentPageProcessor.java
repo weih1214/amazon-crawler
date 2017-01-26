@@ -104,7 +104,7 @@ public class AnswerCommentPageProcessor implements PageProcessor {
 
 //    final String testUrl = "https://www.amazon.com/gp/forum/cd/discussion.html/ref=cm_cd_al_tlc_cl?ie=UTF8&asin=B003EM8008&cdAnchor=Mx2C45GWDUJ4RS2";
 //    Request request = new Request(testUrl).putExtra("Answer ID", getAnswerId(testUrl));
-    final Config cf = new Config("D:\\config.json");
+    final Config cf = new Config(args[0]);
     final Request[] requestArray = getRequestArray(cf);
 
     try {

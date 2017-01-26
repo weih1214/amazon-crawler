@@ -53,7 +53,7 @@ public class ProductPageProcessor implements PageProcessor {
 
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
-    final Config cf = new Config("D:\\config.json");
+    final Config cf = new Config(args[0]);
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", "Url").get();
 
     try {
