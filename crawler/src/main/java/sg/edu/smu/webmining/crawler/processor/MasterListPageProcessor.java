@@ -234,17 +234,19 @@ public class MasterListPageProcessor implements PageProcessor {
   public static void main(String[] args) {
     try {
       final Config cf = new Config(args[0]);
+      final String seedUrl = args[1];
 
       try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
           try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
+
 
             Spider spider = Spider.create(new MasterListPageProcessor())
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new SeedpagePipeline(mongoManager))
                 .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
-                .addUrl(args[1]).thread(5);
+                .addUrl(seedUrl).thread(5);
 
             long time = System.currentTimeMillis();
             spider.run();
