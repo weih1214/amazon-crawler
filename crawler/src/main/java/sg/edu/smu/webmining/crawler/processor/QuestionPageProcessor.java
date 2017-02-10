@@ -34,11 +34,11 @@ public class QuestionPageProcessor implements PageProcessor {
   private static final Pattern QUESTION_URL_PATTERN = Pattern.compile("/forum/");
   private static final Pattern ANSWER_NUMBER_PATTERN = Pattern.compile("(\\d+) answers");
 
-  private final Site site = Site.me()
-      .setCycleRetryTimes(30)
-      .setSleepTime(1000)
-      .setRetryTimes(3)
-      .setCharset("UTF-8");
+  private final Site site;
+
+  public QuestionPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
 
   private List<String> extractAndAddUrls(Document doc) {
     List<String> urlList = new ArrayList<>();
@@ -116,12 +116,12 @@ public class QuestionPageProcessor implements PageProcessor {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new QuestionPageProcessor())
+            Spider spider = Spider.create(new QuestionPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
-                .thread(5);
+                .thread(cf.getThreads());
 
             long time = System.currentTimeMillis();
             spider.run();

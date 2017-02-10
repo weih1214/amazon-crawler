@@ -24,11 +24,12 @@ public class ProductPageProcessor implements PageProcessor {
 
   private static final Pattern PRODUCT_ID_PATTERN = Pattern.compile("/dp/([A-Z0-9]{10})/");
 
-  private Site site = Site.me()
-      .setRetryTimes(5)
-      .setSleepTime(5000)
-      .setCharset("UTF-8")
-      .setCycleRetryTimes(30);
+  private final Site site;
+
+  public ProductPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
+
 
   @Override
   public void process(Page page) {
@@ -61,12 +62,12 @@ public class ProductPageProcessor implements PageProcessor {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new ProductPageProcessor())
+            Spider spider = Spider.create(new ProductPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
-                .thread(5);
+                .thread(cf.getThreads());
 
             long time = System.currentTimeMillis();
             spider.run();

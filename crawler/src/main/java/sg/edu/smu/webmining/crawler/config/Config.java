@@ -19,6 +19,11 @@ public class Config {
   private String mysqlPassword;
 
   private String storageDir;
+  private int threads;
+  private int cycleRetryTimes;
+  private int sleepTime;
+  private int retryTimes;
+  private String charset;
 
   public Config(String filename) throws FileNotFoundException {
     final JSONObject obj = new JSONObject(new JSONTokener(new FileInputStream(filename)));
@@ -28,6 +33,11 @@ public class Config {
     mysqlUsername = obj.getString("MysqlUsername");
     mysqlPassword = obj.getString("MysqlPassword");
     storageDir = obj.getString("StorageDir");
+    threads = obj.getInt("Threads Number");
+    cycleRetryTimes = obj.getInt("CycleRetryTimes");
+    sleepTime = obj.getInt("SleepTime");
+    retryTimes = obj.getInt("RetryTimes");
+    charset = obj.getString("Charset");
   }
 
   public String getMongoHostname() {
@@ -53,4 +63,14 @@ public class Config {
   public String getStorageDir() {
     return storageDir;
   }
+
+  public int getThreads() { return threads;}
+
+  public int getCycleRetryTimes() { return cycleRetryTimes; }
+
+  public int getSleepTime() { return sleepTime; }
+
+  public int getRetryTimes() { return retryTimes; }
+
+  public String getCharset() { return charset; }
 }

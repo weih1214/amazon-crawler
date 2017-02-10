@@ -34,11 +34,7 @@ public class MasterListPageProcessor implements PageProcessor {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  private final Site site = Site.me()
-      .setCycleRetryTimes(30)
-      .setSleepTime(1000)
-      .setRetryTimes(3)
-      .setCharset("UTF-8");
+  private final Site site;
 
   private boolean isSearchStarted = false;
   private boolean isSeedPageVisited = false;
@@ -49,6 +45,9 @@ public class MasterListPageProcessor implements PageProcessor {
 
   private int maxNumItems = 9600;
 
+  public MasterListPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
 
   /*
    * This method is to check whether the page has items lee than 9600. If yes,
@@ -231,6 +230,7 @@ public class MasterListPageProcessor implements PageProcessor {
     return site;
   }
 
+
   public static void main(String[] args) {
     try {
       final Config cf = new Config(args[0]);
@@ -240,13 +240,13 @@ public class MasterListPageProcessor implements PageProcessor {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
           try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
 
-
-            Spider spider = Spider.create(new MasterListPageProcessor())
+            Spider spider = Spider.create(new MasterListPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new SeedpagePipeline(mongoManager))
                 .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
-                .addUrl(seedUrl).thread(5);
+                .addUrl(seedUrl).thread(cf.getThreads());
+
 
             long time = System.currentTimeMillis();
             spider.run();

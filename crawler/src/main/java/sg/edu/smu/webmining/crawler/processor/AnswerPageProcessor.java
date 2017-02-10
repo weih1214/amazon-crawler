@@ -31,11 +31,11 @@ public class AnswerPageProcessor implements PageProcessor {
   private static final Pattern QUESTION_ID_PATTERN_2 = Pattern.compile("/forum/([a-zA-Z0-9]+)/");
   private static final Pattern PRODUCT_ID_PATTERN = Pattern.compile("asin=([a-zA-Z0-9]{10})");
 
-  private final Site site = Site.me()
-      .setCycleRetryTimes(30)
-      .setSleepTime(1000)
-      .setRetryTimes(3)
-      .setCharset("UTF-8");
+  private final Site site;
+
+  public AnswerPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
 
   private String getQuestionId(String pageUrl) {
     final Matcher m1 = QUESTION_ID_PATTERN_1.matcher(pageUrl);
@@ -105,12 +105,12 @@ public class AnswerPageProcessor implements PageProcessor {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new AnswerPageProcessor())
+            Spider spider = Spider.create(new AnswerPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
-                .thread(5);
+                .thread(cf.getThreads());
 
             long time = System.currentTimeMillis();
             spider.run();

@@ -30,11 +30,11 @@ public class OfferPageProcessor implements PageProcessor {
 
   private static final Pattern PRODUCT_ID_PATTERN = Pattern.compile("(?:/offer-listing)?/([0-9A-Z]{10})/");
 
-  private final Site site = Site.me()
-      .setCycleRetryTimes(30)
-      .setSleepTime(1000)
-      .setRetryTimes(3)
-      .setCharset("UTF-8");
+  private final Site site;
+
+  public OfferPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
 
   public String extractProductId(String urlString) {
     final Matcher m = PRODUCT_ID_PATTERN.matcher(urlString);
@@ -102,12 +102,12 @@ public class OfferPageProcessor implements PageProcessor {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new OfferPageProcessor())
+            Spider spider = Spider.create(new OfferPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
-                .thread(5);
+                .thread(cf.getThreads());
 
             long time = System.currentTimeMillis();
             spider.run();

@@ -30,11 +30,11 @@ public class CommentPageProcessor implements PageProcessor {
   private static final Pattern REVIEW_ID_PATTERN = Pattern.compile("(?:/review|/customer-reviews)/([a-zA-Z0-9]+)/");
   private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
-  private final Site site = Site.me()
-      .setCycleRetryTimes(30)
-      .setSleepTime(1000)
-      .setRetryTimes(3)
-      .setCharset("UTF-8");
+  private final Site site;
+
+  public CommentPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+    site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
+  }
 
   private String parseReviewIdFromURL(String url) {
     final Matcher m = REVIEW_ID_PATTERN.matcher(url);
@@ -101,12 +101,12 @@ public class CommentPageProcessor implements PageProcessor {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new CommentPageProcessor())
+            Spider spider = Spider.create(new CommentPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
                 .addUrl(seedpageList)
-                .thread(5);
+                .thread(cf.getThreads());
 
             long time = System.currentTimeMillis();
             spider.run();
