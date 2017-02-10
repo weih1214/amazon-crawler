@@ -21,6 +21,7 @@ public class ProductPage {
 
   private final static Pattern QUESTION_NUMBER_PATTERN = Pattern.compile("\\d+");
   private final static Pattern OFFER_NUMBER_PATTERN = Pattern.compile("\\((\\d+)\\)");
+  private final static Pattern SHOPFOR_ID_PATTERN = Pattern.compile("/dp/(.{10})/");
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -83,6 +84,21 @@ public class ProductPage {
 
   public List<String> getCustomersAlsoViewed() {
     return parseCarouselIds(JsoupParseUtils.selectFirst(doc, "#session-sims-feature"));
+  }
+
+  public List<String> getCustomerAlsoShopfor() {
+    final Elements elements = doc.select("#dp-container a-carousel-viewport a-carousel-card.a-float-left");
+    List<String> result = new ArrayList <>();
+    if (!elements.isEmpty()) {
+      for (Element e:elements) {
+        String url = e.select("a.a-link-normal").attr("href");
+        final Matcher m = SHOPFOR_ID_PATTERN.matcher(url);
+        if (m.find()) {
+          result.add(m.group(1));
+        }
+      }
+    }
+    return result;
   }
 
   private List<String> parseCarouselIds(Element e) {
@@ -337,6 +353,7 @@ public class ProductPage {
     productMap.put("Best Sellers Rank", getBestSellersRank());
     productMap.put("Customers Also Bought", getCustomersAlsoBought());
     productMap.put("Customers Also Viewed", getCustomersAlsoViewed());
+    productMap.put("Customers Also Shopped For", getCustomersAlsoShoppedFor());
     productMap.put("Sponsored Product List1", getSponsoredProductList1());
     productMap.put("Sponsored Product List2", getSponsoredProductList2());
     productMap.put("Offer Link", getOffterLink());
