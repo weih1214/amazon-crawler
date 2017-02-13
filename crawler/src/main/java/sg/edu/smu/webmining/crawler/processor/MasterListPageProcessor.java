@@ -4,11 +4,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
-import sg.edu.smu.webmining.crawler.databasemanager.MasterlistMongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
-import sg.edu.smu.webmining.crawler.pipeline.MasterlistMongoDBPipeline;
-import sg.edu.smu.webmining.crawler.pipeline.SeedpagePipeline;
+import sg.edu.smu.webmining.crawler.pipeline.MasterListMongoDBPipeline;
+import sg.edu.smu.webmining.crawler.pipeline.SeedPagePipeline;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
@@ -84,10 +84,8 @@ public class MasterListPageProcessor implements PageProcessor {
       page.addTargetRequest(seedPage + "&sort=price-asc-rank");
       page.addTargetRequest(seedPage + "&sort=price-desc-rank");
       isSeedPageVisited = true;
-      page.putField("seedpage", seedPage);
-      page.putField("total products", getNumItems(page));
-      page.putField("Page content", page.getRawText());
-      page.putField("Page url", page.getUrl().toString());
+      SeedPagePipeline.putSeedPageFields(page, seedPage, getNumItems(page));
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
       page.setSkip(false);
       logger.info("seed page is visited");
     }
@@ -157,11 +155,11 @@ public class MasterListPageProcessor implements PageProcessor {
   }
 
   private void processContent(Page page) {
-    page.putField("product_ids", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all());
-    page.putField("urls", page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all());
-    page.putField("Page content", page.getRawText());
-    page.putField("Page url", page.getUrl().toString());
-
+    MasterListMongoDBPipeline.putMasterListFields(page,
+        page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all(),
+        page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all()
+    );
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
     final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
     if (nextPageUrl != null) {
       page.addTargetRequest(nextPageUrl);
@@ -236,15 +234,15 @@ public class MasterListPageProcessor implements PageProcessor {
       final Config cf = new Config(args[0]);
       final String seedUrl = args[1];
 
-      try (final MasterlistMongoDBManager mongoManager = new MasterlistMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content")) {
         try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
           try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
 
             Spider spider = Spider.create(new MasterListPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
-                .addPipeline(new SeedpagePipeline(mongoManager))
-                .addPipeline(new MasterlistMongoDBPipeline(mongoManager))
+                .addPipeline(new SeedPagePipeline(mongoManager))
+                .addPipeline(new MasterListMongoDBPipeline(mongoManager))
                 .addUrl(seedUrl).thread(cf.getThreads());
 
 

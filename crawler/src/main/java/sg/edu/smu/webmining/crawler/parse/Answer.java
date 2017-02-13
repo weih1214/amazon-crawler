@@ -142,7 +142,7 @@ public class Answer {
     final Map<String, Object> answerDoc = new LinkedHashMap<>();
     answerDoc.put("Answer ID", getAnswerId());
     answerDoc.put("Answerer Name", getAnswererName());
-    answerDoc.put("Answerer Id", getAnswererId());
+    answerDoc.put("Answerer ID", getAnswererId());
     answerDoc.put("Question ID", getQuestionId());
     answerDoc.put("Product ID", getProductId());
     answerDoc.put("Answer Date", getAnswerDate());

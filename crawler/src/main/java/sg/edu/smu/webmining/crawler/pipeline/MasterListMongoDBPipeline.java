@@ -2,7 +2,8 @@ package sg.edu.smu.webmining.crawler.pipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sg.edu.smu.webmining.crawler.databasemanager.MongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -13,23 +14,32 @@ import java.util.List;
 /**
  * Created by hwei on 17/1/2017.
  */
-public class MasterlistMongoDBPipeline implements Pipeline {
+public class MasterListMongoDBPipeline implements Pipeline {
+
+  private static final String PRODUCT_IDS = "$ProductIDs";
+  private static final String URLS = "$URLs";
+
+  public static void putMasterListFields(Page page, List<String> urls, List<String> products) {
+    page.putField(URLS, urls);
+    page.putField(PRODUCT_IDS, products);
+  }
+
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final MongoDBManager manager;
 
-  public MasterlistMongoDBPipeline(MongoDBManager manager) {
+  public MasterListMongoDBPipeline(MongoDBManager manager) {
     this.manager = manager;
   }
 
   @Override
   public void process(ResultItems resultItems, Task task) {
-    final String source = resultItems.getAll().getOrDefault("source", null).toString();
-    resultItems.getAll().remove("source");
+    final String source = resultItems.get(FileStoragePipeline.SOURCE_FIELD);
+    resultItems.getAll().remove(FileStoragePipeline.SOURCE_FIELD);
 
-    final List<String> productList = resultItems.get("product_ids");
-    final List<String> urlList = resultItems.get("urls");
-    if (productList == null) {
+    final List<String> productList = resultItems.get(PRODUCT_IDS);
+    final List<String> urlList = resultItems.get(URLS);
+    if (productList == null || urlList == null) {
       return;
     }
     final Iterator<String> productIdIter = productList.iterator();
@@ -40,7 +50,7 @@ public class MasterlistMongoDBPipeline implements Pipeline {
       final String url = urlIter.next();
 
       try {
-        manager.update(productId, url, source);
+        manager.addUrlRecord(productId, url, source);
       } catch (Exception e) {
         logger.error("exception happened, when updating db", e);
       }

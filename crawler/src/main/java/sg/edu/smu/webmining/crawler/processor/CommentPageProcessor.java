@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.parse.Comment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -82,8 +82,7 @@ public class CommentPageProcessor implements PageProcessor {
       final Comment comment = new Comment(reviewId, e);
       page.putField(comment.getCommentId(), comment.asMap());
     }
-    page.putField("Page content", page.getRawText());
-    page.putField("Page url", url);
+    FileStoragePipeline.putStorageFields(page, url, page.getRawText());
   }
 
   @Override
@@ -97,7 +96,7 @@ public class CommentPageProcessor implements PageProcessor {
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content", "Comment Link").get();
 
     try {
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "CommentPage", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "CommentPage", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 

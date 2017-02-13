@@ -2,7 +2,7 @@ package sg.edu.smu.webmining.crawler.processor;
 
 import org.jsoup.Jsoup;
 import sg.edu.smu.webmining.crawler.config.Config;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.parse.ProductPage;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -39,12 +39,10 @@ public class ProductPageProcessor implements PageProcessor {
       final String productId = m.group(1);
       ProductPage content = new ProductPage(doc, productId);
       page.putField(productId, content.asMap());
-      page.putField("Page content", page.getRawText());
-      page.putField("Page url", page.getUrl().toString());
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
     } else {
       page.setSkip(true);
     }
-
   }
 
   @Override
@@ -55,10 +53,10 @@ public class ProductPageProcessor implements PageProcessor {
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
     final Config cf = new Config(args[0]);
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", "Url").get();
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", MongoDBManager.URL_FIELD).get();
 
     try {
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 

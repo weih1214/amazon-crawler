@@ -154,9 +154,9 @@ public class Offer {
     offerDoc.put("Seller ID", getSellerId());
     offerDoc.put("Product ID", getProductId());
     offerDoc.put("Seller Rating", getRating());
-    offerDoc.put("Seller Positive Percentage(%)", getSellerPositivePercentage());
+    offerDoc.put("Seller Positive Percentage (%)", getSellerPositivePercentage());
     offerDoc.put("Seller Total Ratings", getSellerTotalRatings());
-    offerDoc.put("Seller Record period(months)", getRecordPeriod());
+    offerDoc.put("Seller Record Period (Months)", getRecordPeriod());
     offerDoc.put("Condition", getCondition());
     offerDoc.put("Condition Description", getConditionDescription());
     offerDoc.put("Price", getPrice());

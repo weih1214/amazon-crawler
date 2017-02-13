@@ -117,7 +117,7 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
         onSuccess(request);
         return page;
       } else if (stopStatusCodes.contains(statusCode)) {
-        logger.debug("status code {} is in stop list, terminate downloading", statusCode);
+        logger.debug("status code {} is in stop list, terminate downloading: {}", statusCode, request.getUrl());
         return null;
       } else {
         logger.debug("status code {}, rescheduling: {}", statusCode, request.getUrl());
@@ -125,26 +125,25 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
       }
 
     } catch (ExecutionException e) {
-      logger.warn("download page " + request.getUrl() + " error, rescheduling", e);
+      logger.warn("download page error, rescheduling: " + request.getUrl(), e);
       return addToCycleRetry(request, site);
     } catch (InterruptedException e) {
       logger.error("downloader thread interrupted, terminating", e);
       throw new RuntimeException(e);
     } catch (IOException e) {
-      logger.error("io error when handing response, rescheduling", e);
+      logger.error("io error when handing response, rescheduling: " + request.getUrl(), e);
       return addToCycleRetry(request, site);
     } catch (TimeoutException e) {
       futureResponse.cancel(true);
-      logger.error("downloading timeout, rescheduling", e);
+      logger.error("downloading timeout, rescheduling: " + request.getUrl(), e);
       return addToCycleRetry(request, site);
     } finally {
       request.putExtra(Request.STATUS_CODE, statusCode);
-
       if (httpResponse != null) {
         try {
           EntityUtils.consume(httpResponse.getEntity());
         } catch (IOException e) {
-          logger.warn("close response fail", e);
+          logger.warn("fail to consume entity", e);
         }
       }
     }

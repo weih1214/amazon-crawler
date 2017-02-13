@@ -6,7 +6,7 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.parse.Review;
 import sg.edu.smu.webmining.crawler.parse.ReviewOnPage;
 import sg.edu.smu.webmining.crawler.parse.ReviewPage;
@@ -120,8 +120,7 @@ public class ReviewPageProcessor implements PageProcessor {
       final Review review = parseCustomerReview(page);
       page.putField(review.getId(), review.asMap());
     }
-    page.putField("Page content", page.getRawText());
-    page.putField("Page url", page.getUrl().toString());
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
   }
 
   @Override
@@ -135,7 +134,7 @@ public class ReviewPageProcessor implements PageProcessor {
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Review Link").get();
 
     try {
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 

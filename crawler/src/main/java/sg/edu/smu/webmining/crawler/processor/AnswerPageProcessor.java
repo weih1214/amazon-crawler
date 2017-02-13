@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
-import sg.edu.smu.webmining.crawler.databasemanager.GeneralMongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.parse.Answer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -80,14 +80,12 @@ public class AnswerPageProcessor implements PageProcessor {
       final Answer answerContent = new Answer(questionId, productId, e);
       page.putField(answerContent.getAnswerId(), answerContent.asMap());
     }
-    page.putField("Page content", page.getRawText());
-    page.putField("Page url", page.getUrl().toString());
     // Pagination
     final String nextLink = getNextLink(doc);
     if (nextLink != null && !nextLink.isEmpty()) {
       page.addTargetRequest(nextLink);
     }
-
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
   }
 
   @Override
@@ -101,7 +99,7 @@ public class AnswerPageProcessor implements PageProcessor {
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "QuestionPage", "content", "Answer Link").get();
 
     try {
-      try (final GeneralMongoDBManager mongoManager = new GeneralMongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 

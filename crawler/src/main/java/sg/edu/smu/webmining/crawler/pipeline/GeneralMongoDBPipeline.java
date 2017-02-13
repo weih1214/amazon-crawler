@@ -2,7 +2,7 @@ package sg.edu.smu.webmining.crawler.pipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sg.edu.smu.webmining.crawler.databasemanager.MongoDBManager;
+import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import us.codecraft.webmagic.ResultItems;
 import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.pipeline.Pipeline;
@@ -22,15 +22,16 @@ public class GeneralMongoDBPipeline implements Pipeline {
 
   @Override
   public void process(ResultItems resultItems, Task task) {
-    final String source = resultItems.getAll().getOrDefault("source", null).toString();
-    resultItems.getAll().remove("source");
+    final String source = resultItems.get(FileStoragePipeline.SOURCE_FIELD);
+    resultItems.getAll().remove(FileStoragePipeline.SOURCE_FIELD);
 
     for (String key : resultItems.getAll().keySet()) {
       try {
-        manager.update(resultItems.get(key), source);
+        manager.addRecord(resultItems.get(key), source);
       } catch (Exception e) {
         logger.error("exception happened, when updating db", e);
       }
     }
   }
+
 }

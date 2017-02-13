@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by mtkachenko.2015 on 30/11/2016.
  */
-public class ReviewDebugPipeline implements Pipeline {
+public class DebugPipeline implements Pipeline {
 
   @Override
   public void process(ResultItems resultItems, Task task) {

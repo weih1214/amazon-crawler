@@ -336,7 +336,7 @@ public class ProductPage {
   public Map<String, Object> asMap(){
     Map<String, Object> productMap = new LinkedHashMap<>();
     productMap.put("Product Title", getProductTitle());
-    productMap.put("Product Id", getProductId());
+    productMap.put("Product ID", getProductId());
     productMap.put("Brand", getBrand());
     productMap.put("Price", getPrice());
     productMap.put("Color List", getColorList());
