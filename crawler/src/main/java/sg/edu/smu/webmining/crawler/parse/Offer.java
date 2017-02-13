@@ -20,9 +20,11 @@ public class Offer {
   private static final Pattern RECORD_PERIOD_PATTERN = Pattern.compile("over the past (\\d\\d?) months");
 
   private final Element offerElement;
+  private final String productId;
 
-  public Offer(Element offerElement) {
+  public Offer(Element offerElement, String productId) {
     this.offerElement = offerElement;
+    this.productId = productId;
   }
 
   public String getSellerName() {
@@ -142,10 +144,15 @@ public class Offer {
     return shippingInfo.replace("Details", "").replaceAll("[&+]", "").trim();
   }
 
+  private String getProductId() {
+    return productId;
+  }
+
   public Map<String, Object> asMap() {
     final Map<String, Object> offerDoc = new LinkedHashMap<>();
     offerDoc.put("Seller Name", getSellerName());
     offerDoc.put("Seller ID", getSellerId());
+    offerDoc.put("Product ID", getProductId());
     offerDoc.put("Seller Rating", getRating());
     offerDoc.put("Seller Positive Percentage(%)", getSellerPositivePercentage());
     offerDoc.put("Seller Total Ratings", getSellerTotalRatings());
