@@ -22,8 +22,9 @@ public class GeneralMongoDBPipeline implements Pipeline {
 
   @Override
   public void process(ResultItems resultItems, Task task) {
-    final String source = resultItems.get("source").toString();
+    final String source = resultItems.getAll().getOrDefault("source", null).toString();
     resultItems.getAll().remove("source");
+
     for (String key : resultItems.getAll().keySet()) {
       try {
         manager.update(resultItems.get(key), source);

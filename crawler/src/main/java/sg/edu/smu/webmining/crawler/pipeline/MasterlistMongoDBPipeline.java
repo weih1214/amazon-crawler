@@ -24,8 +24,8 @@ public class MasterlistMongoDBPipeline implements Pipeline {
 
   @Override
   public void process(ResultItems resultItems, Task task) {
-    final String source = resultItems.get("source");
-    //resultItems.getAll().remove("source");
+    final String source = resultItems.getAll().getOrDefault("source", null).toString();
+    resultItems.getAll().remove("source");
 
     final List<String> productList = resultItems.get("product_ids");
     final List<String> urlList = resultItems.get("urls");
