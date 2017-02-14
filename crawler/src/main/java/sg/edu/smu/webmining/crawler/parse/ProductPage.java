@@ -294,27 +294,26 @@ public class ProductPage {
   public Integer getTotalReviews() {
     final String totalReviews = doc.select("span#acrCustomerReviewText").text();
     if (totalReviews == null || totalReviews.isEmpty()) {
-      return null;
+      return 0;
     }
     final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalReviews);
     if (m.find()) {
       return Integer.parseInt(m.group(0).replace(",", ""));
     }
-    logger.debug("fail to parse totalReviews");
+    logger.warn("fail to parse totalReviews");
     return null;
   }
 
   public Integer getTotalQuestions() {
     final String totalQuestions = doc.select("a#askATFLink span.a-size-base").text();
     if (totalQuestions == null || totalQuestions.isEmpty()) {
-      logger.debug("fail to find totalQuestions");
-      return null;
+      return 0;
     }
     final Matcher m = QUESTION_NUMBER_PATTERN.matcher(totalQuestions);
     if (m.find()) {
       return Integer.parseInt(m.group(0));
     }
-    logger.debug("fail to parse totalQuestions");
+    logger.warn("fail to parse totalQuestions");
     return null;
 
   }
@@ -322,14 +321,13 @@ public class ProductPage {
   public Integer getTotalOffers() {
     final String totalOffers = doc.select("div#olp_feature_div").text();
     if (totalOffers == null || totalOffers.isEmpty()) {
-      logger.debug("fail to find totalOffers");
-      return null;
+      return 0;
     }
     final Matcher m = OFFER_NUMBER_PATTERN.matcher(totalOffers);
     if (m.find()) {
       return Integer.parseInt(m.group(1));
     }
-    logger.debug("fail to parse totalOffers");
+    logger.warn("fail to parse totalOffers");
     return null;
   }
 
