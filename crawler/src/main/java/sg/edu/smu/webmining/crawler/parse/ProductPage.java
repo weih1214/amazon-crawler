@@ -1,6 +1,7 @@
 package sg.edu.smu.webmining.crawler.parse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -28,10 +29,24 @@ public class ProductPage {
   private final Document doc;
   private final String id;
 
+  private static String getProductId(String html) {
+    final Matcher m = Pattern.compile("link rel=\"canonical\" href=\"https://www\\.amazon\\.com.*/dp/(.+)\"")
+        .matcher(html);
+    if (m.find()) {
+      return m.group(1);
+    }
+    throw new IllegalArgumentException("id cannot be located");
+  }
+
+  public ProductPage(String pageHtml, String baseUrl) {
+    this(Jsoup.parse(pageHtml, baseUrl), getProductId(pageHtml));
+  }
+
   public ProductPage(Document doc, String id) {
     this.doc = doc;
     this.id = id;
   }
+
   public String getProductTitle() {
     return JsoupParseUtils.selectText(doc, "#productTitle");
   }
@@ -86,11 +101,11 @@ public class ProductPage {
     return parseCarouselIds(JsoupParseUtils.selectFirst(doc, "#session-sims-feature"));
   }
 
-  public List<String> getCustomerAlsoShopfor() {
+  public List<String> getCustomerAlsoShopFor() {
     final Elements elements = doc.select("#dp-container a-carousel-viewport a-carousel-card.a-float-left");
-    List<String> result = new ArrayList <>();
+    List<String> result = new ArrayList<>();
     if (!elements.isEmpty()) {
-      for (Element e:elements) {
+      for (Element e : elements) {
         String url = e.select("a.a-link-normal").attr("href");
         final Matcher m = SHOPFOR_ID_PATTERN.matcher(url);
         if (m.find()) {
@@ -261,7 +276,7 @@ public class ProductPage {
     return Collections.emptyMap();
   }
 
-  public String getOffterLink() {
+  public String getOfferLink() {
     StringBuilder sb = new StringBuilder(doc.baseUri());
     final String offerLink = doc.select("div#olp_feature_div a").attr("href");
     if (offerLink.isEmpty()) {
@@ -331,7 +346,7 @@ public class ProductPage {
     return null;
   }
 
-  public Map<String, Object> asMap(){
+  public Map<String, Object> asMap() {
     Map<String, Object> productMap = new LinkedHashMap<>();
     productMap.put("Product Title", getProductTitle());
     productMap.put("Product ID", getProductId());
@@ -354,7 +369,7 @@ public class ProductPage {
     productMap.put("Customers Also Shopped For", getCustomersAlsoShoppedFor());
     productMap.put("Sponsored Product List1", getSponsoredProductList1());
     productMap.put("Sponsored Product List2", getSponsoredProductList2());
-    productMap.put("Offer Link", getOffterLink());
+    productMap.put("Offer Link", getOfferLink());
     productMap.put("Question Link", getQuestionLink());
     productMap.put("Review Link", getReviewLink());
     productMap.put("Total Reviews", getTotalReviews());
