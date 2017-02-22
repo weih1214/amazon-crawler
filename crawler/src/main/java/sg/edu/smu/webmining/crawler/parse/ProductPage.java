@@ -297,13 +297,15 @@ public class ProductPage {
     if (reviewLink.isEmpty()) {
       reviewLink = doc.select("div#revSum a.a-link-emphasis").attr("href").trim();
       if (reviewLink.isEmpty()) {
-        sb.append("/product-reviews/").append(id);
+        sb.append("/product-reviews/").append(id).append("ref=cm_cr_arp_d_viewopt_rvwer?reviewerType=all_reviews");
         return sb.toString();
       }
       return reviewLink;
     }
     sb.append(reviewLink);
-    return sb.toString();
+    String review_link = sb.toString();
+    review_link = review_link.replace("reviewerType=avp_only_reviews", "reviewerType=all_reviews");
+    return review_link;
   }
 
   public Integer getTotalReviews() {
