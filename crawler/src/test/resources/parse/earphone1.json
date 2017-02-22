@@ -3,6 +3,14 @@
   "Product ID": "B003EM8008",
   "Brand": "Panasonic",
   "Price": "$10.86",
+  "Image List": [
+    "https://images-na.ssl-images-amazon.com/images/I/31-nuw-iqAL.jpg",
+    "https://images-na.ssl-images-amazon.com/images/I/418Yx9avgTL.jpg",
+    "https://images-na.ssl-images-amazon.com/images/I/418Yx9avgTL.jpg",
+    "https://images-na.ssl-images-amazon.com/images/I/41%2BZweZleGL.jpg",
+    "https://images-na.ssl-images-amazon.com/images/I/51nt0HwnIqL.jpg",
+    "https://images-na.ssl-images-amazon.com/images/I/51chdcPOu9L.jpg"
+  ],
   "Color List": [
     "Black",
     "Blue",

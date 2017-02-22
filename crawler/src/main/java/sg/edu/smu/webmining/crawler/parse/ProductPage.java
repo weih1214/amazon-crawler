@@ -348,12 +348,24 @@ public class ProductPage {
     return null;
   }
 
+  public List<String> getImageLinks() {
+    List<String> imgList = new ArrayList<>();
+    final Elements imgElements = doc.select("div#imageBlock div#altImages li.a-spacing-small.item img");
+    for (Element e: imgElements){
+      String imgUrl = e.attr("src");
+      imgUrl = imgUrl.replaceAll("\\._.*_\\.", "\\.");
+      imgList.add(imgUrl);
+    }
+    return imgList;
+  }
+
   public Map<String, Object> asMap() {
     Map<String, Object> productMap = new LinkedHashMap<>();
     productMap.put("Product Title", getProductTitle());
     productMap.put("Product ID", getProductId());
     productMap.put("Brand", getBrand());
     productMap.put("Price", getPrice());
+    productMap.put("Image List", getImageLinks());
     productMap.put("Color List", getColorList());
     productMap.put("Color ASINs", getColorASINs());
     productMap.put("New Model List", getNewModelList());

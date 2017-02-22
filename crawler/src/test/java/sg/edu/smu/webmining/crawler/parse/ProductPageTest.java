@@ -30,6 +30,7 @@ public class ProductPageTest {
     Assert.assertEquals(answer.get("Product ID"), page.getProductId());
     Assert.assertEquals(answer.get("Product Title"), page.getProductTitle());
     Assert.assertEquals(answer.get("Price"), page.getPrice());
+    Assert.assertEquals(answer.getJSONArray("Image List").toList(), page.getImageLinks());
     Assert.assertEquals(answer.getJSONArray("Color List").toList(), page.getColorList());
     Assert.assertEquals(answer.getJSONArray("Color ASINs").toList(), page.getColorASINs());
     Assert.assertEquals(answer.getJSONArray("New Model List").toList(), page.getNewModelList());

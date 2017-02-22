@@ -3,10 +3,7 @@ package sg.edu.smu.webmining.crawler.parse;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +40,8 @@ public abstract class Review {
   public abstract String getContent();
 
   public abstract String getProductId();
+
+  public abstract List<String> getImageLinks();
 
   public abstract Integer getUpvotes();
 
@@ -83,6 +82,7 @@ public abstract class Review {
     reviewDoc.put("Purchase Verification", isVerifiedPurchase());
     reviewDoc.put("Review Rating", getRating());
     reviewDoc.put("Review Content", getContent());
+    reviewDoc.put("Image List", getImageLinks());
     reviewDoc.put("Comment Link", getCommentLink());
     reviewDoc.put("Total Comments", getTotalComments());
     return reviewDoc;

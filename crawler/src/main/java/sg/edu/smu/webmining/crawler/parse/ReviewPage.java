@@ -1,7 +1,10 @@
 package sg.edu.smu.webmining.crawler.parse;
 
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,7 +56,9 @@ public class ReviewPage extends Review {
 
   @Override
   public String getProductInformation() {
-    return doc.select("table div.tiny b").text();
+    String productInfo = doc.select("table div.tiny b").text();
+    productInfo = productInfo.replaceAll(".*is from:" , "").trim();
+    return productInfo;
   }
 
   @Override
@@ -104,6 +109,18 @@ public class ReviewPage extends Review {
   @Override
   public String getProductId() {
     return productId;
+  }
+
+  @Override
+  public List<String> getImageLinks() {
+    List <String> imgList = new ArrayList<>();
+    final Elements imgElements = doc.select("div img.review-image-thumbnail");
+    for (Element sub : imgElements) {
+      String imgUrl = sub.attr("src");
+      imgUrl = imgUrl.replaceAll("\\._.*_\\.jpg", "\\.jpg");
+      imgList.add(imgUrl);
+    }
+    return imgList;
   }
 
   public Integer getTotalComments() { return totalComments;}

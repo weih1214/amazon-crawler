@@ -1,6 +1,10 @@
 package sg.edu.smu.webmining.crawler.parse;
 
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by mtkachenko.2015 on 30/11/2016.
@@ -70,6 +74,18 @@ public class ReviewOnPage extends Review {
   @Override
   public String getProductId() {
     return productId;
+  }
+
+  @Override
+  public List <String> getImageLinks() {
+    List <String> imgList = new ArrayList <>();
+    final Elements imgElements = e.select("div.review-image-tile-section img");
+    for (Element sub : imgElements) {
+      String imgUrl = sub.attr("src");
+      imgUrl = imgUrl.replaceAll("\\._.*_\\.jpg", "\\.jpg");
+      imgList.add(imgUrl);
+    }
+    return imgList;
   }
 
   @Override
