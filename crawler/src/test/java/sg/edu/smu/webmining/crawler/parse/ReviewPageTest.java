@@ -17,11 +17,11 @@ public class ReviewPageTest {
 
   @Test
   public void testReviewPage() throws IOException {
-    final String html = IOUtils.toString(getClass().getResourceAsStream("/parse/reviewpage.html"));
+    final String html = IOUtils.toString(getClass().getResourceAsStream("/parse/reviewpage/reviewpage2.html"));
     final Document doc = Jsoup.parse(html,"https://www.amazon.com/");
-    final String commentLink = "https://www.amazon.com/gp/customer-reviews/R12J0UJC4DRYLC/ref=cm_cr_arp_d_rvw_ttl?ie=UTF8&ASIN=B003EM8008";
+    final String commentLink = "https://www.amazon.com/gp/customer-reviews/R2BPEQYD1QMC66/ref=cm_cr_getr_d_rvw_ttl?ie=UTF8&ASIN=B003EM8008";
     final ReviewPage page = new ReviewPage(doc, commentLink);
-    final JSONObject answer = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/parse/reviewpage.json")));
+    final JSONObject answer = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/parse/reviewpage/reviewpage2.json")));
 
     Assert.assertEquals(answer.get("Product ID"), page.getProductId());
     Assert.assertEquals(answer.get("Review Title"), page.getTitle());
