@@ -7,10 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.parse.Review;
 import sg.edu.smu.webmining.crawler.parse.ReviewOnPage;
 import sg.edu.smu.webmining.crawler.parse.ReviewPage;
-import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
@@ -28,9 +28,6 @@ import java.util.regex.Pattern;
 public class ReviewPageProcessor implements PageProcessor {
 
   private static final Pattern URL_PRODUCT_ID_PATTERN1 = Pattern.compile("/product-reviews/(.*?)/");
-  private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
-  private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
-  private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -49,43 +46,19 @@ public class ReviewPageProcessor implements PageProcessor {
     return null;
   }
 
-  private static String parseReviewId(Page page) {
-    return parseWithRegexp(page, URL_REVIEW_ID_PATTERN);
-  }
-
   private static String parseProductIdFromListPage(Page page) {
     return parseWithRegexp(page, URL_PRODUCT_ID_PATTERN1);
-  }
-
-  private static String parseProductIdFromCustomerPage(Page page) {
-    return parseWithRegexp(page, URL_PRODUCT_ID_PATTERN2);
   }
 
   private Review parseReviewOnListPage(Page page, Element e) {
     return new ReviewOnPage(parseProductIdFromListPage(page), e);
   }
 
-  private Integer getTotalComments(Page page) {
-    final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
-    final String totalComments = doc.select("div.fosmall div.cdPageInfo").text();
-    if (totalComments == null || totalComments.isEmpty()) {
-      // Log failure to parse
-      return null;
-    }
-    final Matcher m = COMMENT_NUMBER_PATTERN.matcher(totalComments);
-    if (m.find()) {
-      return Integer.parseInt(m.group(1));
-    }
-    // Log failure to regex
-    return null;
-  }
 
   private Review parseCustomerReview(Page page) {
     final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
-    final String productId = parseProductIdFromCustomerPage(page);
-    final String reviewId = parseReviewId(page);
-    final Integer totalComments = getTotalComments(page);
-    return new ReviewPage(reviewId, productId, doc, page.getUrl().toString(), totalComments);
+    final String url = page.getUrl().toString();
+    return new ReviewPage(doc, url);
   }
 
   private void parseProductReviews(Page page) {
@@ -134,7 +107,7 @@ public class ReviewPageProcessor implements PageProcessor {
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Review Link").get();
 
     try {
-      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content")) {
+      try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPageBackup", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 

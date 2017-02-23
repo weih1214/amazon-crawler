@@ -10,30 +10,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by hwei on 23/2/2017.
+ * Created by mtkachenko.2015 on 30/11/2016.
  */
-public class ReviewPage extends Review {
+public class ReviewPageBackup extends Review {
 
   private static final Pattern HELPFUL_PATTERN = Pattern.compile("(.*) of (.*) people");
-  private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
-  private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
-  private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
+  private final String reviewId;
+  private final String productId;
+  private final String commentLink;
   private final Document doc;
-  private final String url;
+  private final Integer totalComments;
 
-
-  public ReviewPage(Document doc, String url) {
-    this.doc = doc;
-    this.url = url;
-  }
-
-  private static String parseWithRegexp(String url, Pattern pattern) {
-    final Matcher m = pattern.matcher(url);
-    if (m.find()) {
-      return m.group(1);
-    }
-    return null;
+  public ReviewPageBackup(String reviewId, String productId, Document reviewPage, String commentLink, Integer totalComments) {
+    this.reviewId = reviewId;
+    this.productId = productId;
+    this.commentLink = commentLink;
+    doc = reviewPage;
+    this.totalComments = totalComments;
   }
 
   @Override
@@ -43,7 +37,7 @@ public class ReviewPage extends Review {
 
   @Override
   public String getId() {
-    return parseWithRegexp(url, URL_REVIEW_ID_PATTERN);
+    return reviewId;
   }
 
   @Override
@@ -105,7 +99,7 @@ public class ReviewPage extends Review {
 
   @Override
   public String getCommentLink() {
-    return url;
+    return commentLink;
   }
 
   @Override
@@ -115,7 +109,7 @@ public class ReviewPage extends Review {
 
   @Override
   public String getProductId() {
-    return parseWithRegexp(url, URL_PRODUCT_ID_PATTERN2);
+    return productId;
   }
 
   @Override
@@ -130,18 +124,5 @@ public class ReviewPage extends Review {
     return imgList;
   }
 
-  public Integer getTotalComments() {
-    final String totalComments = doc.select("div.fosmall div.cdPageInfo").text();
-    if (totalComments == null || totalComments.isEmpty()) {
-      // Log failure to parse
-      return 0;
-    }
-    final Matcher m = COMMENT_NUMBER_PATTERN.matcher(totalComments);
-    if (m.find()) {
-      return Integer.parseInt(m.group(1));
-    }
-    // Log failure to regex
-    return null;
-  }
+  public Integer getTotalComments() { return totalComments;}
 }
-
