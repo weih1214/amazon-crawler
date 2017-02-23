@@ -16,7 +16,7 @@ public class ReviewPage extends Review {
 
   private static final Pattern HELPFUL_PATTERN = Pattern.compile("(.*) of (.*) people");
   private static final Pattern URL_REVIEW_ID_PATTERN = Pattern.compile("/customer-reviews/(.*?)/");
-  private static final Pattern URL_PRODUCT_ID_PATTERN2 = Pattern.compile("ASIN=(.{10})");
+  private static final Pattern URL_PRODUCT_ID_PATTERN = Pattern.compile("ASIN=(.{10})");
   private static final Pattern COMMENT_NUMBER_PATTERN = Pattern.compile("(\\d+) posts");
 
   private final Document doc;
@@ -115,7 +115,7 @@ public class ReviewPage extends Review {
 
   @Override
   public String getProductId() {
-    return parseWithRegexp(url, URL_PRODUCT_ID_PATTERN2);
+    return parseWithRegexp(url, URL_PRODUCT_ID_PATTERN);
   }
 
   @Override

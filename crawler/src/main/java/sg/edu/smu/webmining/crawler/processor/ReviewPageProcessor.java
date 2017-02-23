@@ -22,12 +22,9 @@ import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ReviewPageProcessor implements PageProcessor {
 
-  private static final Pattern URL_PRODUCT_ID_PATTERN1 = Pattern.compile("/product-reviews/(.*?)/");
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -35,30 +32,6 @@ public class ReviewPageProcessor implements PageProcessor {
 
   public ReviewPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
     site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
-  }
-
-  private static String parseWithRegexp(Page page, Pattern pattern) {
-    final String url = page.getUrl().toString();
-    final Matcher m = pattern.matcher(url);
-    if (m.find()) {
-      return m.group(1);
-    }
-    return null;
-  }
-
-  private static String parseProductIdFromListPage(Page page) {
-    return parseWithRegexp(page, URL_PRODUCT_ID_PATTERN1);
-  }
-
-  private Review parseReviewOnListPage(Page page, Element e) {
-    return new ReviewOnPage(parseProductIdFromListPage(page), e);
-  }
-
-
-  private Review parseCustomerReview(Page page) {
-    final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
-    final String url = page.getUrl().toString();
-    return new ReviewPage(doc, url);
   }
 
   private void parseProductReviews(Page page) {
@@ -75,7 +48,7 @@ public class ReviewPageProcessor implements PageProcessor {
           page.addTargetRequest(reviewUrl);
         }
       } else {
-        final Review review = parseReviewOnListPage(page, e);
+        final Review review = new ReviewOnPage(e, page.getUrl().toString());
         page.putField(review.getId(), review.asMap());
       }
     }
@@ -90,7 +63,8 @@ public class ReviewPageProcessor implements PageProcessor {
         page.addTargetRequest(nextLink);
       }
     } else if (url.contains("customer-reviews")) {
-      final Review review = parseCustomerReview(page);
+      final Document doc = Jsoup.parse(page.getRawText(), "https://www.amazon.com/");
+      final Review review = new ReviewPage(doc, url);
       page.putField(review.getId(), review.asMap());
     }
     FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());

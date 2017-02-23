@@ -5,21 +5,16 @@ import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Created by mtkachenko.2015 on 30/11/2016.
+ * Created by hwei on 23/2/2017.
  */
-public class ReviewOnPage extends Review {
-
-  private static final Pattern URL_PRODUCT_ID_PATTERN = Pattern.compile("/product-reviews/(.*?)/");
-
-  private final String url;
+public class ReviewOnPageBackup extends Review{
+  private final String productId;
   private final Element e;
 
-  public ReviewOnPage(Element reviewElement, String url) {
-    this.url = url;
+  public ReviewOnPageBackup(String productId, Element reviewElement) {
+    this.productId = productId;
     e = reviewElement;
   }
 
@@ -52,7 +47,7 @@ public class ReviewOnPage extends Review {
 
   @Override
   public String getProductInformation() {
-    return e.select("a[data-hook= format-strip]").text().replace("|", " ");
+    return e.select("a[data-hook= format-strip]").text();
   }
 
   @Override
@@ -77,12 +72,12 @@ public class ReviewOnPage extends Review {
 
   @Override
   public String getProductId() {
-    return parseWithRegexp(url, URL_PRODUCT_ID_PATTERN);
+    return productId;
   }
 
   @Override
   public List <String> getImageLinks() {
-    List <String> imgList = new ArrayList <>();
+    List <String> imgList = new ArrayList<>();
     final Elements imgElements = e.select("div.review-image-tile-section img");
     for (Element sub : imgElements) {
       String imgUrl = sub.attr("src");
@@ -109,14 +104,6 @@ public class ReviewOnPage extends Review {
 
   @Override
   public Integer getTotalComments() {
-    return 0;
-  }
-
-  private static String parseWithRegexp(String url, Pattern pattern) {
-    final Matcher m = pattern.matcher(url);
-    if (m.find()) {
-      return m.group(1);
-    }
     return null;
   }
 
