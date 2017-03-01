@@ -103,6 +103,51 @@ public class MysqlFileManager implements FileManager, AutoCloseable {
     }
   }
 
+  public String put(String url, String content, InputStream imageStream) throws StorageException {
+    try {
+      return put(url, new ByteArrayInputStream(content.getBytes("UTF-8")), imageStream);
+    } catch (UnsupportedEncodingException e) {
+      throw new StorageException(e);
+    }
+  }
+
+  public String put(String url, InputStream content, InputStream imageStream) throws StorageException {
+    try {
+      if (!content.markSupported()) {
+        final ByteArrayOutputStream copyOutputStream = new ByteArrayOutputStream();
+        IOUtils.copy(content, copyOutputStream);
+        content = new ByteArrayInputStream(copyOutputStream.toByteArray());
+      }
+
+      final String md5 = DigestUtils.md5Hex(content);
+      content.reset();
+      final String subDirName = md5.substring(0, 2);
+      insertStatement.setString(1, url);
+      insertStatement.setString(2, md5);
+      insertStatement.setString(3, subDirName);
+      if (insertStatement.executeUpdate() == 1) {
+        final ResultSet rs = insertStatement.getGeneratedKeys();
+        if (rs.next()) {
+          int id = rs.getInt(1);
+          final String sId = String.valueOf(id);
+          save(content, new File(storageDir, subDirName), sId);
+          connection.commit();
+          return sId;
+        }
+      }
+
+      connection.rollback();
+      throw new StorageException("Cannot store the record");
+    } catch (SQLException | IOException e) {
+      try {
+        connection.rollback();
+      } catch (SQLException rbe) {
+        throw new StorageException("Cannot store the record", rbe);
+      }
+      throw new StorageException("Cannot store the record", e);
+    }
+  }
+
   @Override
   public String put(String url, String content) throws StorageException {
     try {

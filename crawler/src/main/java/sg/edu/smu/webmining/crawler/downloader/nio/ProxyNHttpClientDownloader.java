@@ -28,7 +28,7 @@ import us.codecraft.webmagic.selector.PlainText;
 import us.codecraft.webmagic.utils.HttpConstant;
 import us.codecraft.webmagic.utils.UrlUtils;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -204,18 +204,21 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
   }
 
   private Page handleResponse(Request request, String charset, HttpResponse httpResponse, Task task) throws IOException {
-    String content = getContent(charset, httpResponse);
-    Page page = new Page();
+    final byte[] rawContent = IOUtils.toByteArray(httpResponse.getEntity().getContent());
+
+    String content = getContent(charset, new ByteArrayInputStream(rawContent), httpResponse);
+    RawPage page = new RawPage();
     page.setRawText(content);
     page.setUrl(new PlainText(request.getUrl()));
     page.setRequest(request);
     page.setStatusCode(httpResponse.getStatusLine().getStatusCode());
+    page.setRawContent(rawContent);
     return page;
   }
 
-  private String getContent(String charset, HttpResponse httpResponse) throws IOException {
+  private String getContent(String charset, InputStream contentStream, HttpResponse httpResponse) throws IOException {
     if (charset == null) {
-      byte[] contentBytes = IOUtils.toByteArray(httpResponse.getEntity().getContent());
+      byte[] contentBytes = IOUtils.toByteArray(contentStream);
       String htmlCharset = getHtmlCharset(httpResponse, contentBytes);
       if (htmlCharset != null) {
         return new String(contentBytes, htmlCharset);
@@ -224,7 +227,7 @@ public class ProxyNHttpClientDownloader extends AbstractDownloader implements Au
         return new String(contentBytes);
       }
     } else {
-      return IOUtils.toString(httpResponse.getEntity().getContent(), charset);
+      return IOUtils.toString(contentStream, charset);
     }
   }
 
