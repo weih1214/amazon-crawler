@@ -7,9 +7,10 @@ db_name = sys.argv[2] + 'Page'
 client = MongoClient('localhost', 27017)
 db_product = client.ProductPage
 db_para = client[db_name]
+para_id = sys.argv[2] + " ID" if sys.argv[2] != 'Offer' else 'Seller ID'
 
 dic = dict()
-groupedResult = db_para.content.aggregate([{'$group':{'_id':'$Product ID','count':{'$sum':1}}}])['result']
+groupedResult = db_para.content.aggregate([{"$group":{"_id":{"Product ID":"$Product ID", para_id:"$"+para_id},"count":{"$sum":1}}}, {"$group":{"_id":"$_id.Product ID", "count":{"$sum":1}}}])['result']
 for doc in groupedResult:
 	dic[doc['_id']] = doc['count']
 
