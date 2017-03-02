@@ -9,7 +9,7 @@ import java.io.InputStream;
  */
 public interface FileManager {
 
-  public String put(String url, String content) throws StorageException;
+  public String put(String url, byte[] rawContent) throws StorageException;
 
   public String put(String url, InputStream content) throws StorageException;
 

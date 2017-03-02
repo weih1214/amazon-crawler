@@ -7,6 +7,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.Offer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -83,7 +84,8 @@ public class OfferPageProcessor implements PageProcessor {
     for (Element element : offerElements) {
       page.putField(RandomStringUtils.random(10, true, true), new Offer(element, productId).asMap());
     }
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+    byte[] rawContent = ((RawPage)page).getRawContent();
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
   }
 
   @Override

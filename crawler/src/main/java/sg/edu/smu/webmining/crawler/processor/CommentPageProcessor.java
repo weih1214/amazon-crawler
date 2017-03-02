@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.Comment;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -82,7 +83,8 @@ public class CommentPageProcessor implements PageProcessor {
       final Comment comment = new Comment(reviewId, e);
       page.putField(comment.getCommentId(), comment.asMap());
     }
-    FileStoragePipeline.putStorageFields(page, url, page.getRawText());
+    byte[] rawContent = ((RawPage)page).getRawContent();
+    FileStoragePipeline.putStorageFields(page, url, page.getRawText(), rawContent);
   }
 
   @Override

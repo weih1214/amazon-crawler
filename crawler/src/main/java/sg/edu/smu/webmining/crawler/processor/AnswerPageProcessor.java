@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.Answer;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
@@ -85,7 +86,8 @@ public class AnswerPageProcessor implements PageProcessor {
     if (nextLink != null && !nextLink.isEmpty()) {
       page.addTargetRequest(nextLink);
     }
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+    byte[] rawContent = ((RawPage)page).getRawContent();
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
   }
 
   @Override

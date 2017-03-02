@@ -16,7 +16,7 @@ public class MongoDBManager implements AutoCloseable {
   private static final String SOURCE_FIELD = "Source";
   private static final String SEED_PAGE_FIELD = "Seed Page";
   private static final String TOTAL_PRODUCTS_FIELD = "Total Products";
-
+  // On linux, it is URL; On my desktop, it is Url
   public static final String URL_FIELD = "URL";
   public static final String PRODUCT_ID_FIELD = "Product ID";
 

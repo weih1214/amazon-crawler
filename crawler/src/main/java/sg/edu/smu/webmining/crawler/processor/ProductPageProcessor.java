@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.ProductPage;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
@@ -39,7 +40,8 @@ public class ProductPageProcessor implements PageProcessor {
       final String productId = m.group(1);
       ProductPage content = new ProductPage(doc, productId);
       page.putField(productId, content.asMap());
-      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+      byte[] rawContent = ((RawPage)page).getRawContent();
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
     } else {
       page.setSkip(true);
     }

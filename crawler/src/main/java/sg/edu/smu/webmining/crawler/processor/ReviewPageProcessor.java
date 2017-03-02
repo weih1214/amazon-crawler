@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.Review;
 import sg.edu.smu.webmining.crawler.parse.ReviewOnPage;
 import sg.edu.smu.webmining.crawler.parse.ReviewPage;
@@ -67,7 +68,8 @@ public class ReviewPageProcessor implements PageProcessor {
       final Review review = new ReviewPage(doc, url);
       page.putField(review.getId(), review.asMap());
     }
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+    byte[] rawContent = ((RawPage)page).getRawContent();
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
   }
 
   @Override

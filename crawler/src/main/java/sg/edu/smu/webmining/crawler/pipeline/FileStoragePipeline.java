@@ -18,8 +18,10 @@ public class FileStoragePipeline implements Pipeline {
 
   private static final String PAGE_URL = "$PageUrl";
   private static final String PAGE_CONTENT = "$PageContent";
+  private static final String PAGE_RAWCONTENT = "$PageRawContent";
 
-  public static void putStorageFields(Page page, String url, String content) {
+  public static void putStorageFields(Page page, String url, String content, byte[] rawContent) {
+    page.putField(PAGE_RAWCONTENT, rawContent);
     page.putField(PAGE_URL, url);
     page.putField(PAGE_CONTENT, content);
   }
@@ -36,14 +38,16 @@ public class FileStoragePipeline implements Pipeline {
   public void process(ResultItems resultItems, Task task) {
     final String url = resultItems.get(PAGE_URL);
     final String content = resultItems.get(PAGE_CONTENT);
-    resultItems.getAll().remove(PAGE_CONTENT);
+    final byte[] rawContent = resultItems.get(PAGE_RAWCONTENT);
     resultItems.getAll().remove(PAGE_URL);
-    if (url == null || content == null) {
-      logger.info("url or content of the page is not set");
+    resultItems.getAll().remove(PAGE_CONTENT);
+    resultItems.getAll().remove(PAGE_RAWCONTENT);
+    if (url == null || content == null || rawContent == null) {
+      logger.info("url or content or rawContent of the page is not set");
       return;
     }
     try {
-      final String source = storage.put(url, content);
+      final String source = storage.put(url, rawContent);
       resultItems.put(SOURCE_FIELD, source);
       logger.info("raw file successfully stored: {}", source);
     } catch (StorageException e) {

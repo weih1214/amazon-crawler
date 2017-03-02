@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.MasterListMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.pipeline.SeedPagePipeline;
@@ -85,7 +86,8 @@ public class MasterListPageProcessor implements PageProcessor {
       page.addTargetRequest(seedPage + "&sort=price-desc-rank");
       isSeedPageVisited = true;
       SeedPagePipeline.putSeedPageFields(page, seedPage, getNumItems(page));
-      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+      byte[] rawContent = ((RawPage)page).getRawContent();
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
       page.setSkip(false);
       logger.info("seed page is visited");
     }
@@ -159,7 +161,8 @@ public class MasterListPageProcessor implements PageProcessor {
         page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().all(),
         page.getHtml().css(".a-link-normal.s-access-detail-page.a-text-normal").links().regex("/dp/(.*?)/").all()
     );
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText());
+    byte[] imgByte = ((RawPage)page).getRawContent();
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), imgByte);
     final String nextPageUrl = page.getHtml().css("#pagnNextLink").links().toString();
     if (nextPageUrl != null) {
       page.addTargetRequest(nextPageUrl);

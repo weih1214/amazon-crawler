@@ -2,6 +2,7 @@ package sg.edu.smu.webmining.crawler.processor;
 
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
+import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
 import sg.edu.smu.webmining.crawler.storage.MysqlFileManager;
@@ -26,9 +27,10 @@ public class ReviewImagePageProcessor implements PageProcessor {
 
   @Override
   public void process(Page page) {
-    final String url = page.getUrl().toString();
-    System.out.println(page.getRawText());
-    FileStoragePipeline.putStorageFields(page, url, page.getRawText());
+
+    byte[] rawContent = ((RawPage)page).getRawContent();
+    String url = page.getUrl().toString();
+    FileStoragePipeline.putStorageFields(page, url, page.getRawText(), rawContent);
   }
 
   @Override
