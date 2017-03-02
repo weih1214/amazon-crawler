@@ -73,8 +73,10 @@ public class AnswerCommentPageProcessor implements PageProcessor {
       final AnswerComment ansComment = new AnswerComment(element, questionId, answerId, answerText);
       page.putField(ansComment.getAnswerCommentId(), ansComment.asMap());
     }
-    byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+    if (page instanceof RawPage) {
+      byte[] rawContent = ((RawPage) page).getRawContent();
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+    }
   }
 
   @Override

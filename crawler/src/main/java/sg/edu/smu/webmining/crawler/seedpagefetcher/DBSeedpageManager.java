@@ -47,11 +47,11 @@ public class DBSeedpageManager implements SeedpageManager {
   public String[] getImageList() {
     final List<String> imageList = new ArrayList<>();
     for (final Document doc : queryResult) {
-      final List<String> img = (ArrayList<String>)doc.get(fieldName);
-      if (img == null || img.size() == 0) {
+      final List<String> imgs = (List<String>)doc.get(fieldName);
+      if (imgs == null || imgs.size() == 0) {
         continue;
       }
-      imageList.addAll(img);
+      imageList.addAll(imgs);
     }
     mongoClient.close();
     return imageList.toArray(new String[imageList.size()]);

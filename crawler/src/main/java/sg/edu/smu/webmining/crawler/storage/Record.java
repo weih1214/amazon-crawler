@@ -10,7 +10,7 @@ public interface Record {
 
   public InputStream getInputStream() throws IOException;
 
-  public String getContent() throws IOException;
+  public byte[] getRawContent() throws IOException;
 
   /**
    * @return URL of the stored content

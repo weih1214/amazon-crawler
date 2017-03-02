@@ -27,7 +27,7 @@ public class MysqlFileManager implements FileManager, AutoCloseable {
     private final String md5;
     private final long timestamp = -1;
 
-    private String lazyContent;
+    private byte[] lazyRawContent;
 
     private StorageRecord(String id, String url, File recordFile, String md5) {
       this.id = id;
@@ -42,11 +42,11 @@ public class MysqlFileManager implements FileManager, AutoCloseable {
     }
 
     @Override
-    public String getContent() throws IOException {
-      if (lazyContent == null) {
-        lazyContent = IOUtils.toString(getInputStream(), "UTF-8");
+    public byte[] getRawContent() throws IOException {
+      if (lazyRawContent == null) {
+        lazyRawContent = IOUtils.toByteArray(getInputStream());
       }
-      return lazyContent;
+      return lazyRawContent;
     }
 
     @Override

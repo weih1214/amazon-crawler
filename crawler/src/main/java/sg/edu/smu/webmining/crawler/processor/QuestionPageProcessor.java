@@ -98,8 +98,10 @@ public class QuestionPageProcessor implements PageProcessor {
       final Question question = new Question(questionID, questionElement, pageURL, totalAnswers);
       page.putField(questionID, question.asMap());
     }
-    byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+    if (page instanceof RawPage) {
+      byte[] rawContent = ((RawPage) page).getRawContent();
+      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+    }
   }
 
   @Override

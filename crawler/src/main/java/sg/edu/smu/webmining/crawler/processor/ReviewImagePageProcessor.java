@@ -28,9 +28,11 @@ public class ReviewImagePageProcessor implements PageProcessor {
   @Override
   public void process(Page page) {
 
-    byte[] rawContent = ((RawPage)page).getRawContent();
-    String url = page.getUrl().toString();
-    FileStoragePipeline.putStorageFields(page, url, rawContent);
+    if (page instanceof RawPage) {
+      byte[] rawContent = ((RawPage) page).getRawContent();
+      String url = page.getUrl().toString();
+      FileStoragePipeline.putStorageFields(page, url, rawContent);
+    }
   }
 
   @Override

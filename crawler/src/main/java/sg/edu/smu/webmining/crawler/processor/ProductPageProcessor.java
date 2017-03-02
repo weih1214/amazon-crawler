@@ -40,8 +40,10 @@ public class ProductPageProcessor implements PageProcessor {
       final String productId = m.group(1);
       ProductPage content = new ProductPage(doc, productId);
       page.putField(productId, content.asMap());
-      byte[] rawContent = ((RawPage)page).getRawContent();
-      FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+      if (page instanceof RawPage) {
+        byte[] rawContent = ((RawPage) page).getRawContent();
+        FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
+      }
     } else {
       page.setSkip(true);
     }
