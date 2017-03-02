@@ -17,13 +17,11 @@ public class FileStoragePipeline implements Pipeline {
   public static final String SOURCE_FIELD = "$Source";
 
   private static final String PAGE_URL = "$PageUrl";
-  private static final String PAGE_CONTENT = "$PageContent";
-  private static final String PAGE_RAWCONTENT = "$PageRawContent";
+  private static final String PAGE_RAW_CONTENT = "$PageRawContent";
 
-  public static void putStorageFields(Page page, String url, String content, byte[] rawContent) {
-    page.putField(PAGE_RAWCONTENT, rawContent);
+  public static void putStorageFields(Page page, String url, byte[] rawContent) {
+    page.putField(PAGE_RAW_CONTENT, rawContent);
     page.putField(PAGE_URL, url);
-    page.putField(PAGE_CONTENT, content);
   }
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -37,13 +35,11 @@ public class FileStoragePipeline implements Pipeline {
   @Override
   public void process(ResultItems resultItems, Task task) {
     final String url = resultItems.get(PAGE_URL);
-    final String content = resultItems.get(PAGE_CONTENT);
-    final byte[] rawContent = resultItems.get(PAGE_RAWCONTENT);
+    final byte[] rawContent = resultItems.get(PAGE_RAW_CONTENT);
     resultItems.getAll().remove(PAGE_URL);
-    resultItems.getAll().remove(PAGE_CONTENT);
-    resultItems.getAll().remove(PAGE_RAWCONTENT);
-    if (url == null || content == null || rawContent == null) {
-      logger.info("url or content or rawContent of the page is not set");
+    resultItems.getAll().remove(PAGE_RAW_CONTENT);
+    if (url == null || rawContent == null) {
+      logger.info("url or rawContent of the page is not set");
       return;
     }
     try {

@@ -30,7 +30,7 @@ public class ReviewImagePageProcessor implements PageProcessor {
 
     byte[] rawContent = ((RawPage)page).getRawContent();
     String url = page.getUrl().toString();
-    FileStoragePipeline.putStorageFields(page, url, page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, url, rawContent);
   }
 
   @Override
@@ -39,8 +39,8 @@ public class ReviewImagePageProcessor implements PageProcessor {
   }
 
   public static void main(String[] args) throws SQLException, FileNotFoundException {
-    // args[0] = "D:\\config1.json"
-    final Config cf = new Config("D:\\config1.json");
+
+    final Config cf = new Config(args[0]);
     final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content", "Image List").getImageList();
 
     try {

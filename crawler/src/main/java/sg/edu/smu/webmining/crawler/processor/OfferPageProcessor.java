@@ -85,7 +85,7 @@ public class OfferPageProcessor implements PageProcessor {
       page.putField(RandomStringUtils.random(10, true, true), new Offer(element, productId).asMap());
     }
     byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
   }
 
   @Override

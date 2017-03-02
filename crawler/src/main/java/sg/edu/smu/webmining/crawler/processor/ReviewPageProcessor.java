@@ -69,7 +69,7 @@ public class ReviewPageProcessor implements PageProcessor {
       page.putField(review.getId(), review.asMap());
     }
     byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
   }
 
   @Override

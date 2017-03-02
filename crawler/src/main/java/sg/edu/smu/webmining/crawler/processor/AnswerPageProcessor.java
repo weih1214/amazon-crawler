@@ -87,7 +87,7 @@ public class AnswerPageProcessor implements PageProcessor {
       page.addTargetRequest(nextLink);
     }
     byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
   }
 
   @Override

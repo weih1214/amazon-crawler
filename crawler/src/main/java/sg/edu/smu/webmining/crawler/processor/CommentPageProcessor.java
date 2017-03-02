@@ -84,7 +84,7 @@ public class CommentPageProcessor implements PageProcessor {
       page.putField(comment.getCommentId(), comment.asMap());
     }
     byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, url, page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, url, rawContent);
   }
 
   @Override

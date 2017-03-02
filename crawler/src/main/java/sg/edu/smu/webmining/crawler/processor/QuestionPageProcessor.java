@@ -99,7 +99,7 @@ public class QuestionPageProcessor implements PageProcessor {
       page.putField(questionID, question.asMap());
     }
     byte[] rawContent = ((RawPage)page).getRawContent();
-    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), page.getRawText(), rawContent);
+    FileStoragePipeline.putStorageFields(page, page.getUrl().toString(), rawContent);
   }
 
   @Override
