@@ -23,6 +23,8 @@ import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 public class ReviewPageProcessor implements PageProcessor {
 
@@ -45,7 +47,7 @@ public class ReviewPageProcessor implements PageProcessor {
       if ((Integer.parseInt(commentNo) != 0) || helpfulVotes.contains("found this helpful")) {
         final String reviewUrl = e.select("a.a-size-base.a-link-normal.review-title.a-color-base.a-text-bold").attr("href");
         if (!reviewUrl.isEmpty()) {
-          logger.debug("reviewUrl is not found");
+          logger.debug("reviewUrl is found");
           page.addTargetRequest(reviewUrl);
         }
       } else {
@@ -82,7 +84,8 @@ public class ReviewPageProcessor implements PageProcessor {
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
     final Config cf = new Config(args[0]);
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Review Link").get();
+    final List<String> fieldNameList = Arrays.asList("Review Link");
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", fieldNameList).get();
 
     try {
       try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPageBackup", "content")) {

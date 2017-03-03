@@ -7,9 +7,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import sg.edu.smu.webmining.crawler.config.Config;
 import sg.edu.smu.webmining.crawler.db.MongoDBManager;
+import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.downloader.nio.RawPage;
 import sg.edu.smu.webmining.crawler.parse.Offer;
-import sg.edu.smu.webmining.crawler.downloader.nio.ProxyNHttpClientDownloader;
 import sg.edu.smu.webmining.crawler.pipeline.FileStoragePipeline;
 import sg.edu.smu.webmining.crawler.pipeline.GeneralMongoDBPipeline;
 import sg.edu.smu.webmining.crawler.seedpagefetcher.DBSeedpageManager;
@@ -21,6 +21,8 @@ import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -98,7 +100,8 @@ public class OfferPageProcessor implements PageProcessor {
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
     final Config cf = new Config(args[0]);
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", "Offer Link").get();
+    final List<String> fieldNameList = Arrays.asList("Offer Link");
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", fieldNameList).get();
 
     try {
       try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "OfferPage", "content")) {

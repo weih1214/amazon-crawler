@@ -17,6 +17,8 @@ import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,7 +59,8 @@ public class ProductPageProcessor implements PageProcessor {
   public static void main(String[] args) throws SQLException, FileNotFoundException {
 
     final Config cf = new Config(args[0]);
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", MongoDBManager.URL_FIELD).get();
+    final List<String> fieldNameList = Arrays.asList(MongoDBManager.URL_FIELD);
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "Masterlist", "content", fieldNameList).get();
 
     try {
       try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content")) {

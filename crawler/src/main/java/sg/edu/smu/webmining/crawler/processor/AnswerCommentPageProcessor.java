@@ -22,6 +22,7 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -93,7 +94,8 @@ public class AnswerCommentPageProcessor implements PageProcessor {
   }
 
   public static Request[] getRequestArray(Config cf) throws SQLException {
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content", "Answer Comment Link").get();
+    final List<String> fieldNameList = Arrays.asList("Answer Comment Link");
+    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "AnswerPage", "content", fieldNameList).get();
     List<Request> requestList = new ArrayList<>();
     for (String s1 : seedpageList) {
       requestList.add(new Request(s1).putExtra("Answer ID", getAnswerId(s1)));
