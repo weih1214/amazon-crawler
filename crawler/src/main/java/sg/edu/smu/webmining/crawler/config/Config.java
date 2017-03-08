@@ -24,6 +24,7 @@ public class Config {
   private int sleepTime;
   private int retryTimes;
   private String charset;
+  private String productFilePath, reviewFilePath;
 
   public Config(String filename) throws FileNotFoundException {
     final JSONObject obj = new JSONObject(new JSONTokener(new FileInputStream(filename)));
@@ -38,6 +39,8 @@ public class Config {
     sleepTime = obj.getInt("SleepTime");
     retryTimes = obj.getInt("RetryTimes");
     charset = obj.getString("Charset");
+    productFilePath = obj.getString("ProductFilePath");
+    reviewFilePath = obj.getString("ReviewFilePath");
   }
 
   public String getMongoHostname() {
@@ -73,4 +76,8 @@ public class Config {
   public int getRetryTimes() { return retryTimes; }
 
   public String getCharset() { return charset; }
+
+  public String getProductFilePath() { return productFilePath;}
+
+  public String getReviewFilePath() { return reviewFilePath;}
 }

@@ -1,4 +1,8 @@
-package sg.edu.smu.webmining.crawler.processor;
+package sg.edu.smu.webmining.crawler.fixer;
+
+/**
+ * Created by hwei on 8/3/2017.
+ */
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,19 +25,19 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-public class ReviewPageProcessor implements PageProcessor {
+public class ReviewPageFixer implements PageProcessor {
 
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final Site site;
 
-  public ReviewPageProcessor(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
+  public ReviewPageFixer(int cycleRetryTimes, int sleepTime, int retryTimes, String charset) {
     site = Site.me().setCycleRetryTimes(cycleRetryTimes).setSleepTime(sleepTime).setRetryTimes(retryTimes).setCharset(charset);
   }
 
@@ -81,18 +85,18 @@ public class ReviewPageProcessor implements PageProcessor {
     return site;
   }
 
-  public static void main(String[] args) throws SQLException, FileNotFoundException {
+  public static void main(String[] args) throws SQLException, IOException {
 
-    final Config cf = new Config(args[0]);
+    final Config cf = new Config("D:\\config1.json");
     final List<String> fieldNameList = Arrays.asList("Review Link");
-    final String[] seedpageList = new DBSeedpageManager(cf.getMongoHostname(), cf.getMongoPort(), "ProductPage", "content", fieldNameList).get();
+    final String[] seedpageList = new DBSeedpageManager().getFixerSeedpage(cf.getReviewFilePath());
 
     try {
       try (final MongoDBManager mongoManager = new MongoDBManager(cf.getMongoHostname(), cf.getMongoPort(), "ReviewPage", "content")) {
         try (final MysqlFileManager mysqlFileStorage = new MysqlFileManager(cf.getMysqlHostname(), cf.getMysqlUsername(), cf.getMysqlPassword(), cf.getStorageDir())) {
           try (final ProxyNHttpClientDownloader downloader = new ProxyNHttpClientDownloader()) {
 
-            Spider spider = Spider.create(new ReviewPageProcessor(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
+            Spider spider = Spider.create(new ReviewPageFixer(cf.getCycleRetryTimes(), cf.getSleepTime(), cf.getRetryTimes(), cf.getCharset()))
                 .setDownloader(downloader)
                 .addPipeline(new FileStoragePipeline(mysqlFileStorage))
                 .addPipeline(new GeneralMongoDBPipeline(mongoManager))
@@ -114,3 +118,4 @@ public class ReviewPageProcessor implements PageProcessor {
 
 
 }
+

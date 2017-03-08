@@ -8,6 +8,9 @@ import com.mongodb.client.model.Projections;
 import org.bson.Document;
 import us.codecraft.webmagic.Request;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +33,14 @@ public class DBSeedpageManager implements SeedpageManager {
     this.fieldNameList = fieldNameList;
   }
 
+  public DBSeedpageManager(){
+    mongoClient = null;
+    mongoDatabase = null;
+    mongoCollection = null;
+    queryResult = null;
+    fieldNameList = null;
+  }
+
   @Override
   public String[] get() {
     final List<String> seedpageList = new ArrayList<>();
@@ -45,6 +56,7 @@ public class DBSeedpageManager implements SeedpageManager {
     return seedpageList.toArray(new String[seedpageList.size()]);
   }
 
+  // Fetch urls for image downloading
   public Request[] getRequestList() {
     final List<Request> requestList = new ArrayList <>();
     for (final Document doc : queryResult) {
@@ -60,18 +72,16 @@ public class DBSeedpageManager implements SeedpageManager {
     mongoClient.close();
     return requestList.toArray(new Request[requestList.size()]);
   }
-/*
-  public String[] getImageList() {
-    final List<String> imageList = new ArrayList<>();
-    for (final Document doc : queryResult) {
-      final List<String> imgs = (List<String>)doc.get(fieldName);
-      if (imgs == null || imgs.size() == 0) {
-        continue;
+
+  // Fetch urls for fixer
+  public String[] getFixerSeedpage(String filePath) throws IOException {
+    final List<String> fixerList = new ArrayList<> ();
+    try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+      String str;
+      while((str = br.readLine()) != null){
+        fixerList.add(str);
       }
-      imageList.addAll(imgs);
     }
-    mongoClient.close();
-    return imageList.toArray(new String[imageList.size()]);
+    return fixerList.toArray(new String[fixerList.size()]);
   }
-  */
 }

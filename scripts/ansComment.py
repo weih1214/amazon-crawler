@@ -16,7 +16,10 @@ for doc in cursor2:
 	answer_id = doc['Answer ID']
 	expected_val = doc['Total Answer Comments'] if doc['Total Answer Comments'] else 0
 	actual_val = dic.get(answer_id, 0)
-	print 'Review ID: ',answer_id,'\nActual Number: ', actual_val, '\nExpected Number: ', expected_val
+	print 'Answer ID: ',answer_id,'\nActual Number: ', actual_val, '\nExpected Number: ', expected_val
+	if actual_val > expected_val:
+		print 'Succeeds: Actual Number Exceeds!'
+		continue
 	if expected_val == 0 or actual_val / float(expected_val) >= float(sys.argv[1]):
 		print 'Succeeds!'
 		count += 1
