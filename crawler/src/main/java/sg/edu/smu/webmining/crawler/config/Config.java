@@ -24,7 +24,7 @@ public class Config {
   private int sleepTime;
   private int retryTimes;
   private String charset;
-  private String productFilePath, reviewFilePath;
+  private String productFilePath, reviewFilePath, questionFilePath, offerFilePath, commentFilePath, answerFilePath, ansCommentFilePath;
 
   public Config(String filename) throws FileNotFoundException {
     final JSONObject obj = new JSONObject(new JSONTokener(new FileInputStream(filename)));
@@ -41,6 +41,11 @@ public class Config {
     charset = obj.getString("Charset");
     productFilePath = obj.getString("ProductFilePath");
     reviewFilePath = obj.getString("ReviewFilePath");
+    questionFilePath = obj.getString("QuestionFilePath");
+    offerFilePath = obj.getString("OfferFilePath");
+    commentFilePath = obj.getString("CommentFilePath");
+    answerFilePath = obj.getString("AnswerFilePath");
+    ansCommentFilePath = obj.getString("AnswerCommentFilePath");
   }
 
   public String getMongoHostname() {
@@ -80,4 +85,14 @@ public class Config {
   public String getProductFilePath() { return productFilePath;}
 
   public String getReviewFilePath() { return reviewFilePath;}
+
+  public String getQuestionFilePath() { return questionFilePath;}
+
+  public String getOfferFilePath() { return offerFilePath;}
+
+  public String getCommentFilePath() { return commentFilePath;}
+
+  public String getAnswerFilePath() { return answerFilePath;}
+
+  public String getAnsCommentFilePath() { return ansCommentFilePath;}
 }
