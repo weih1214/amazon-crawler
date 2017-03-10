@@ -84,4 +84,16 @@ public class DBSeedpageManager implements SeedpageManager {
     }
     return fixerList.toArray(new String[fixerList.size()]);
   }
+
+  public Request[] getRequestList(String filePath) throws IOException {
+    final List<Request> requestList = new ArrayList<> ();
+    try(BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+      String str;
+      while((str = br.readLine()) != null){
+        String[] temp = str.split("\\t");
+        requestList.add(new Request(temp[1]).putExtra("Answer ID", temp[0]));
+      }
+    }
+    return requestList.toArray(new Request[requestList.size()]);
+  }
 }

@@ -32,7 +32,7 @@ for doc in cursor2:
 		continue
 	print 'Fails!'
 	fail_id_list.append(answer_id)
-	fail_link_list.append(doc['Answer Comment Link'])
+	fail_link_list.append(doc['Answer ID']+'\t'+doc['Answer Comment Link'])
 
 actual_number = total_number - len(fail_id_list)
 print 'Actual Number: ', actual_number,'\nExpected Number: ', total_number, '\nPercentage: ', actual_number/float(total_number)
@@ -40,3 +40,6 @@ print 'Excluding zero:'
 print 'Actutal Number: ', actual_number-zero_count, '\nExpected Number: ', total_number-zero_count, '\nPercentage: ', (actual_number-zero_count)/float(total_number-zero_count)
 print fail_id_list
 print len(fail_id_list)
+with open('/root/scripts/fixList/anscomment.txt', 'a+') as f:
+	for link in fail_link_list:
+		f.write(link+'\n')

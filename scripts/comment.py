@@ -42,5 +42,5 @@ print 'Actual Number: ', actual_count-zero_count,'\nExpected Number: ', total_nu
 print fail_id_list
 with open('/root/scripts/fixList/comment.txt', 'a+') as f:
 	for link in fail_link_list:
-		f.write(link)
+		f.write(link+'\n')
 print len(fail_id_list)

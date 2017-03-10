@@ -44,7 +44,7 @@ print 'Actual Number of Successful Products: ' + str(success_count) + '\nExpecte
 print 'Excluding zero:'
 print 'Actual Number of Successful Products: ' + str(success_count-zero_count) + '\nExpected Number of Products: '+ str(total_count-zero_count)+'\nPercentage: '+ str((success_count-zero_count)/float(total_count-zero_count))
 print fail_id_list
-filePath = '/root/scripts/fixList/' + sys.argv[2] + '.txt'
+filePath = '/root/scripts/fixList/' + sys.argv[2].lower() + '.txt'
 with open(filePath, 'a+') as f:
 	for k in fail_link_list:
 		f.write(k + '\n')

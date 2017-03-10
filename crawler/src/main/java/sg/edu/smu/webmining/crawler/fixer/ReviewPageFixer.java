@@ -27,8 +27,6 @@ import us.codecraft.webmagic.processor.PageProcessor;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 
 public class ReviewPageFixer implements PageProcessor {
 
@@ -88,7 +86,6 @@ public class ReviewPageFixer implements PageProcessor {
   public static void main(String[] args) throws SQLException, IOException {
 
     final Config cf = new Config("D:\\config1.json");
-    final List<String> fieldNameList = Arrays.asList("Review Link");
     final String[] seedpageList = new DBSeedpageManager().getFixerSeedpage(cf.getReviewFilePath());
 
     try {
