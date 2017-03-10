@@ -14,11 +14,15 @@ for doc in cursor1:
 
 cursor2 = db_question.content.aggregate([{'$group':{'_id':{'Question ID':'$Question ID', 'Total Answers':'$Total Answers', 'Answer Link':'$Answer Link'}}}])['result']
 
+zero_count = 0
+
 for doc in cursor2:
 	question_id = doc['_id']['Question ID']
 	expected_val = doc['_id']['Total Answers'] if doc['_id']['Total Answers'] else 0
+	if expected_val == 0:
+		zero_count += 1
 	actual_val = dic.get(question_id, 0)
-	print 'Question ID: ', question_id, '\nActual Number: ',str(actual_val),'\nExpected Number: ',str(expected_val)
+	print 'Question ID: ', question_id, '\nActual Number: ',str(actual_val),'\nExpected Number:'+str(expected_val)
 	if actual_val > expected_val:
 		print 'Succeeds: Actual Number Exceeds!'
 		continue
@@ -31,6 +35,8 @@ for doc in cursor2:
 
 actual_number = total_number - len(fail_id_list)
 print 'Actual Number: '+str(actual_number)+ '\nExpected Number: '+str(total_number)+'\nPercentage: '+ str(actual_number/float(total_number))
+print 'Excluding zero:'
+print 'Actual Number: '+str(actual_number-zero_count)+ '\nExpected Number: '+str(total_number-zero_count)+'\nPercentage: '+ str((actual_number-zero_count)/float(total_number-zero_count))
 print '\nFailure List: '+str(fail_id_list)
 with open('/root/scripts/fixList/answer.txt', 'a+') as f:
 	for link in fail_link_list:
